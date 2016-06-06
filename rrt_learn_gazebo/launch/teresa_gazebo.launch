@@ -1,0 +1,38 @@
+<launch>
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="false"/>
+  <arg name="headless" default="true"/>
+  <arg name="debug" default="false"/>
+
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find rrt_learn_gazebo)/worlds/teresa_new.world"/>
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- Load the URDF into the ROS Parameter Server -->
+  <param name="robot_description"
+	 command="$(find xacro)/xacro.py '$(find rrt_learn_gazebo)/urdf/teresa_robot.urdf.xacro'" />
+  <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"	args="-urdf -model teresa_robot -param robot_description"/>
+  
+  <rosparam file="$(find rrt_learn_gazebo)/urdf/teresa_robot.yaml" command="load"/>
+
+  <remap from="/teresa_robot/head_position_controller/command" to="head_tilt"/>
+  <remap from="/teresa_robot/stalk_position_controller/command" to="stalk_position"/>
+  <!-- load the controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/teresa_robot" args="head_position_controller stalk_position_controller joint_state_controller"
+>    
+  </node>
+
+  <!-- convert joint states to TF transforms for rviz, etc -->
+  <group ns="teresa_robot">
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen"/>
+  </group>
+</launch>

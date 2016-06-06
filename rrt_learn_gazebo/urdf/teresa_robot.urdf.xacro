@@ -1,0 +1,353 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="teresa_robot">
+
+  <xacro:include filename="$(find rrt_learn_gazebo)/urdf/teresa_robot.gazebo" />
+  <xacro:include filename="$(find rrt_learn_gazebo)/urdf/materials.xacro" />
+  
+  <xacro:property name="pi" value="3.1415926535897931" />
+  <xacro:property name="mscale" value="0.1" />
+  
+  <link name="base_link">
+    <collision>
+      <origin xyz="0.0 0.0 0.336" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_body.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0.0 0.0 0.336" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_body.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+
+    <inertial>
+      <origin xyz="0.0 0.0 0.336" rpy="0.0 0.0 0.0"/>
+      <mass value="9.0" />
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+	       iyy="1.0" iyz="0.0"
+	       izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="left_wheel_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <mass value="0.2" />
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="front_wheel_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <mass value="0.2" />
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="right_wheel_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <mass value="0.2" />
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+
+  <link name="back_wheel_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_wheel.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <mass value="0.2" />
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+
+
+
+
+  <link name="giraff_stalk">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_neck.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_neck.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="giraff_head">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_head.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/2.0}"/>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/teresa_head.dae" scale="${mscale} ${mscale} ${mscale}"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="laserfront">
+   <visual>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/hokuyo.dae"/>
+      </geometry>
+    </visual>
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0.0 0.0 0.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="laser360">
+   <visual>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/hokuyo.dae"/>
+      </geometry>
+    </visual>
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0.0 0.0 0.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="laserback">
+   <visual>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/hokuyo.dae"/>
+      </geometry>
+    </visual>
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0.0 0.0 0.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="head_camera">
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0.0 0.0 0.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <link name="xtionPeople_link">
+   <visual>
+      <geometry>
+        <mesh filename="package://teresa_gazebo/meshes/asus_xtion_pro_live.dae"
+	      scale="0.001 0.001 0.001"/>
+      </geometry>
+      <origin xyz="0.0 0 0.0" rpy="${pi/2} 0 ${pi/2}"/>
+    </visual>
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0.0 0.0 0.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
+    </inertial>
+  </link>
+
+  <joint name="body_to_hokuyo_front_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laserfront"/>
+    <origin xyz="0.23725 0 0.261"/>
+  </joint>
+
+  <joint name="body_to_hokuyo_360_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser360"/>
+    <origin xyz="0.0 0 0.0"/>
+  </joint>
+
+  <joint name="body_to_hokuyo_back_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laserback"/>
+    <origin xyz="-0.23725 0 0.261" rpy="0 0 ${pi}"/>
+  </joint>
+
+  <joint name="stalk_to_xtion_people_joint" type="fixed">
+    <parent link="giraff_stalk"/>
+    <child link="xtionPeople_link"/>
+    <origin xyz="0.045 0.0 -0.375"/>
+  </joint>
+
+  <joint name="body_to_left_wheel_joint" type="continuous">
+    <axis xyz="0 1 0" />
+    <parent link="base_link"/>
+    <child link="left_wheel_link"/>
+    <origin xyz="0 0.2502 0.0725"/>
+  </joint>
+
+  <joint name="body_to_back_wheel_joint" type="continuous">
+    <axis xyz="0 1 0" />
+    <parent link="base_link"/>
+    <child link="back_wheel_link"/>
+    <origin xyz="-0.2502 0 0.0725"/>
+  </joint>
+
+  <joint name="body_to_front_wheel_joint" type="continuous">
+    <axis xyz="0 1 0" />
+    <parent link="base_link"/>
+    <child link="front_wheel_link"/>
+    <origin xyz="0.2502 0 0.0725"/>
+  </joint>
+
+
+  <joint name="body_to_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <origin xyz="0 -0.2502 0.0725" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <joint name="body_to_stalk_joint" type="prismatic">
+    <axis xyz="0 0 1" />
+    <parent link="base_link"/>
+    <child link="giraff_stalk"/>
+    <origin xyz="0 0.0 1.303"/> 
+    <limit effort="30" velocity="0.2" lower="-0.15" upper="0.1"/>
+  </joint>
+
+  <joint name="stalk_to_head_joint" type="revolute">
+    <axis xyz="0 1 0" />
+    <parent link="giraff_stalk"/>
+    <child link="giraff_head"/>
+    <origin xyz="0 0.0 0.0"/> 
+    <limit effort="30" velocity="0.2" lower="-1.57" upper="1.57"/>
+  </joint>
+
+  <joint name="head_to_cam_joint" type="fixed">
+    <parent link="giraff_head"/>
+    <child link="head_camera"/>
+    <origin xyz="0 0 0.261"/>
+  </joint>
+
+
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="stalk_to_head_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="head_motor">
+      <mechanicalReduction>100</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="tran2">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="body_to_stalk_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="stalk_motor">
+      <mechanicalReduction>100</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+</robot>

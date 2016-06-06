@@ -1,0 +1,16 @@
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_link
+  update_frequency: 10.0
+  publish_frequency: 5.0
+  static_map: false
+  rolling_window: true
+  width: 5.0
+  height: 5.0
+  inflation_radius: 4.  #0.34*2 = 0.68 #0.34*4=1.36
+  cost_scaling_factor: 2.0 #7.0 #2.0 #10.0=default
+  resolution: 0.2
+  #Setting the cost threshold to 253 induces the robot to move as close as physically possible to an obstacle
+  #Use only through move_base_supervisor reconfiguration, if needed.
+  lethal_cost_threshold: 150
+

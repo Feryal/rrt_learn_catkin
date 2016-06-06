@@ -1,0 +1,15 @@
+teresa_robot:
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+
+  head_position_controller:
+    type: position_controllers/JointPositionController
+    publish_rate: 50
+    joint: stalk_to_head_joint
+
+  stalk_position_controller:
+    type: position_controllers/JointPositionController
+    publish_rate: 50
+    joint: body_to_stalk_joint
+    

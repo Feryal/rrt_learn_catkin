@@ -1,0 +1,7 @@
+/CMakeLists.txt
+*.[oa]
+*~
+.kdev*/*
+*.kdev*
+*.pyc
+

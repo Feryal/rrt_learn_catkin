@@ -1,0 +1,3 @@
+add this to your .bashrc file:
+export GAZEBO_MODEL_PATH=<path to your workspace>/src/teresa_gazebo/models:
+export GAZEBO_RESOURCE_PATH=<path to your workspace>/teresa_catkin_ws/src/teresa_gazebo:

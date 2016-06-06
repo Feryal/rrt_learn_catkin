@@ -1,0 +1,19 @@
+<launch>
+  <param name="use_sim_time" value="true"/>
+
+  <include file="$(find teresa_gazebo)/launch/teresa_gazebo.launch">
+    <arg name="gui" value="false"/>
+    <arg name="headless" value="true"/>
+  </include>
+  
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_rgbd_cam" args="0.0 -2 0.677 0 0 0 odom camera_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_left_wheel" args="0.0 -0.252 0.0725 0 0 0 base_link left_wheel_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_right_wheel" args="0.0 0.252 0.0725 0 0 0 base_link right_wheel_link 100"/>
+
+
+
+  <node pkg="laser_assembler" type="laser_assembler" name="laser_assembler" args="/scanback /scanfront">
+	<remap from="scan" to="scan360"/>
+  </node>
+  <!--include file="$(find uva_launchers)/launch/exp3_sim/viz_exp3_sim.launch"/-->
+</launch>
