@@ -17,7 +17,7 @@
     <include file="$(find rrt_learn_gazebo)/launch/amcl.launch" />
 
 					<!-- RVIZ-->
-<!--node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/-->
+<node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/>
 
 					<!-- MOVE BASE-->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
@@ -41,16 +41,19 @@
     </node>  
 
     					     <!-- RRT -->
-    <node pkg="active_perception_controller" type="mmp.py" name="entropy_motion_planner" output="screen">	
+    <node pkg="active_perception_controller" type="mmp.py" name="mmp learner" output="screen">	
 	    <param name="rrt_eta" type="double" value="1.1" />
-	    <param name="planning_time" type="double" value="12"/>
+	    <param name="planning_time" type="double" value="5"/>
 	    <param name="max_planning_time" type="double" value="20"/>
 	    <param name="iterations" type="int" value="10"/>
-	    <param name="experiment_name" type="string" value="astar_ground_truth"/>
-	    <param name="learning_rate" type="double" value="0.08"/>
-	    <param name="session_name" type="string" value="learning_astar_ft"/>
+	    <param name="validation_proportion" type="double" value="0.4"/>	
+	    <param name="experiment_name" type="string" value="unobserved_ground_truth"/>
+	    <param name="learning_rate" type="double" value="0.3"/>
+	    <param name="session_name" type="string" value="different_ground_truth_better_features"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="astar"/>
+	    <param name="cost_featureset" type="string" value="icra3"/>
+
     </node>  		
 
 					<!--People to costmap -->

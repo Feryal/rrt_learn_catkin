@@ -16,7 +16,7 @@ import roslib
 from rospy.numpy_msg import numpy_msg
 from sensor_msgs.msg import PointCloud, ChannelFloat32
 from std_msgs.msg import Float32MultiArray
-from sklearn.neighbors import NearestNeighbors,LSHForest
+from sklearn.neighbors import NearestNeighbors
 import time
 import threading
 import numpy as np
@@ -29,7 +29,6 @@ from visualization_msgs.msg import Marker,MarkerArray
 import itertools
 from helper_functions import pixel_to_point
 import cProfile, pstats, StringIO
-from pyflann import FLANN
 from scipy.ndimage.filters import gaussian_filter
 import Queue as Q
 from copy import deepcopy
@@ -94,6 +93,7 @@ class MotionPlanner():
         
         self._rrt_eta = rospy.get_param("~rrt_eta", 2.0) # Notation from Karaman & Frazolli, 2011
         self.planner = rospy.get_param("~planner", "rrtstar")
+        print "THE PLANNER IIIIISSSS", self.planner
         print "RRT ETA",self._rrt_eta
         robot_radius = rospy.get_param("~robot_radius", 0.4)
         self.goal_tolerance = rospy.get_param("~goal_tolerance", 0.2)
@@ -102,6 +102,7 @@ class MotionPlanner():
         self._robot_radius_px = robot_radius / self._navmap.info.resolution
         sigma_person = rospy.get_param("sigma_person", 0.05)
         self.astar_res = rospy.get_param("~astar_res", 0.5)
+        self.planning_featureset = rospy.get_param("~cost_featureset", "icra1")
 
         print "PLANNING TIME",self.planning_time
         self._planned = False # This is just for testing purposes. Delete me!
@@ -111,7 +112,7 @@ class MotionPlanner():
         self._distmap = sp.ndimage.distance_transform_edt(logical)
 
         dt = self._distmap;mp = self._navmap
-        self.cost_manager = Cost_Manager(dt,mp)
+        self.cost_manager = Cost_Manager(dt,mp,features = self.planning_featureset)
         pkgpath = roslib.packages.get_pkg_dir('active_perception_controller')
         self._plan_srv = rospy.Service('plan', ActivePerceptionPlan, self._plan_srv_cb)
         self.initialise_costmap(5)
@@ -126,6 +127,7 @@ class MotionPlanner():
         elif self.planner == "rrtstar":
             f.write("RRT* planning time:  "+str(self.planning_time)+"\n")
             f.write("RRT eta:  "+str(self._rrt_eta)+"\n")
+        f.write("Featureset:"+self.planning_featureset+"\n")
         f.close()
 
     def initialise_costmap(self,resolution):
@@ -191,6 +193,7 @@ class MotionPlanner():
         self.update_costmap()
         self._lock.acquire()
         print "PLANNING"
+        print self.planner
         weights = Float32MultiArray()
         weights.data = self.cost_manager.weights
         self.weights_pub.publish(weights)

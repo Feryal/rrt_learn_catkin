@@ -15,7 +15,7 @@ import rospy
 import roslib
 from rospy.numpy_msg import numpy_msg
 from sensor_msgs.msg import PointCloud, ChannelFloat32
-from sklearn.neighbors import NearestNeighbors,LSHForest
+from sklearn.neighbors import NearestNeighbors
 import time
 import threading
 import numpy as np
@@ -28,7 +28,6 @@ from visualization_msgs.msg import Marker,MarkerArray
 import itertools
 from helper_functions import pixel_to_point
 import cProfile, pstats, StringIO
-from pyflann import FLANN
 from scipy.ndimage.filters import gaussian_filter
 import Queue as Q
 from copy import deepcopy
@@ -98,6 +97,7 @@ class Learner(object):
     def __init__(self):
         self.iterations = rospy.get_param("~iterations", 10)
         self.learning_rate = rospy.get_param("~learning_rate", 0.5)
+        self.momentum = 0.0
         self.exp_name = rospy.get_param("~experiment_name", "workshop_data3")
         self.session_name = rospy.get_param("~session_name", "rrt_max_margin")
         self.path = os.path.dirname(os.path.abspath(__file__))
@@ -115,25 +115,22 @@ class Learner(object):
         self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
 
         self.baseline_eval = False
-        self.weights = fn.pickle_loader(self.directory+"/weights.pkl")
-        if self.weights!=None:
+
+        self.gt_weights = np.array([ 2. ,  0.5,  0. ,  3. ,  1. ,  0.5,  1. ])
+        fn.pickle_saver({"featureset":"icra2","weights":self.gt_weights},self.directory+"/weights.pkl")
+        loaded = fn.pickle_loader(self.directory+"/weights.pkl")
+        self.gt_weights = loaded["weights"]
+        self.gt_featureset = loaded["featureset"]
+        if self.gt_weights!=None:
             self.baseline_eval = True
 
-        # First get results for rrtstar.
-        path = self.experiment_data[0].path_array
-        path2 = interpolate_path(path)
-
-        fs = self.feature_sums(path,self.experiment_data[0].goal_xy)
-        fs2 = self.feature_sums(path2,self.experiment_data[0].goal_xy)
-        print fs
-        print fs2
         self.write_learning_params(self.results_dir)
         self.single_run("1")
-        shuffle(self.experiment_data)
-        self.single_run("2")
-        shuffle(self.experiment_data)
-        self.single_run("3")
-        shuffle(self.experiment_data)
+        #shuffle(self.experiment_data)
+        #self.single_run("2")
+        #shuffle(self.experiment_data)
+        #self.single_run("3")
+        #shuffle(self.experiment_data)
         #self.single_run("4")
 
     def write_learning_params(self,directory):
@@ -172,6 +169,7 @@ class Learner(object):
     
     def learning_loop(self,motion_planner,planner_type = "rrtstar"):
 
+        # some time bookkeeping
         if planner_type == "rrtstar" or planner_type == "astar":
             motion_planner.planner = planner_type
             time_to_cache=0
@@ -182,19 +180,27 @@ class Learner(object):
 
         # Initialise weights.
         self.learner_weights = np.zeros(self.costlib.weights.shape[0])
-        self.learner_weights[0] = 5
+        self.learner_weights[0] = 5 # some cost for distance
         validating = False
         similarity = []
         cost_diff = []
         time_taken = []
         initial_paths = []
         final_paths = []
+        all_feature_sums = []
         for n,i in enumerate(self.experiment_data):
             self.ppl_pub.publish(i.people)
-            rospy.sleep(0.2)
+            rospy.sleep(0.5)
             i.feature_sum = self.feature_sums(i.path_array,i.goal_xy)
+            all_feature_sums.append(i.feature_sum)
             if self.baseline_eval == True:
-                i.path_cost = np.dot(self.weights,i.feature_sum)
+                self.costlib.set_featureset(self.gt_featureset)
+                i.gt_feature_sum =self.feature_sums(i.path_array,i.goal_xy)
+                i.path_cost = np.dot(self.gt_weights,i.feature_sum)
+        feature_sum_variance = np.var(np.array(all_feature_sums),axis = 0)
+
+        self.costlib.set_featureset(self.planner.planning_featureset)
+
         for iteration in range(self.iterations):
             prev_grad = 0
             print "####################ITERATION",iteration
@@ -243,18 +249,23 @@ class Learner(object):
 
                 if validating == False:
                     path_feature_sum_la = self.feature_sums(array_path_la,i.goal_xy)
-                    iter_grad+= self.learner_weights*0.05 + i.feature_sum - path_feature_sum_la 
+                    iter_grad+= self.learner_weights*0.00 + (i.feature_sum - path_feature_sum_la)#/feature_sum_variance
+                    print "GRADIENT", (i.feature_sum - path_feature_sum_la)#/feature_sum_variance#
 
                 path_feature_sum = self.feature_sums(array_path,i.goal_xy)
                 # Baseline evaluation if possible.
                 if self.baseline_eval == True:
-                    path_base_cost = np.dot(self.weights,path_feature_sum)
+                    #calculate featuresums based on the ground truth featureset whatever that is
+                    self.costlib.set_featureset(self.gt_featureset)
+                    gt_feature_sum = self.feature_sums(array_path,i.goal_xy)
+                    path_base_cost = np.dot(self.gt_weights,gt_feature_sum)
                     iter_cost_diff.append(path_base_cost - i.path_cost)
-            
+                    self.costlib.set_featureset(self.planner.planning_featureset)
+                          
                 print "PATH FEATURE SUM",path_feature_sum
                 iter_similarity.append(self.get_similarity(i.path_array,array_path))
-            grad = iter_grad/(len(self.experiment_data)*(1-self.validation_proportion)) 
-            self.learner_weights = self.learner_weights - 0.0*prev_grad - 0.8*self.learning_rate*grad
+            grad = (1-self.momentum)*iter_grad/(len(self.experiment_data)*(1-self.validation_proportion)) + self.momentum*prev_grad
+            self.learner_weights = self.learner_weights - self.learning_rate*grad
             prev_grad = grad
             idx = np.where(self.learner_weights<0)
             self.learner_weights[idx]=0
@@ -271,11 +282,10 @@ class Learner(object):
 
         return results
 
-
-
     def feature_sums(self,xy_path,goal_xy,interpolation=True):
         # calculates path feature sums.
-        xy_path = interpolate_path(xy_path,resolution=0.2)
+        if interpolation==True:
+            xy_path = interpolate_path(xy_path,resolution=0.2)
         feature_sum = 0
         for i in range(len(xy_path)-1):
             if i ==0:

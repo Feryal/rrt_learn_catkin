@@ -44,13 +44,14 @@
 
 					 <!-- Experiment Runner -->
     <node pkg="active_perception_controller" type="experiment_runner_simple.py" name="experiment_runner" output="screen">
-	    <param name="datapoints_to_collect" type="int" value="10" />
-	    <param name="experiment_name" type="string" value="astar_ground_truth" />
+	    <param name="datapoints_to_collect" type="int" value="20" />
+	    <param name="experiment_name" type="string" value="featureset_change" />
 	    <param name="rrt_eta" type="double" value="1.1" />
-	    <param name="planning_time" type="double" value="50"/>
+	    <param name="planning_time" type="double" value="70"/>
 	    <param name="max_planning_time" type="double" value="60"/>
 	    <param name="astar_res" type="double" value="0.2"/>
-	    <param name="planner" type="string" value="astar"/>
+	    <param name="planner" type="string" value="rrtstar"/>
+	    <param name="cost_featureset" type="string" value="icra2"/>
     </node>
 
 				<!--Configuration Changer -->

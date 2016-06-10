@@ -27,22 +27,29 @@ from geometry_msgs.msg._PoseStamped import PoseStamped
 import math
 
 class Cost_Manager(object):
-	def __init__(self,dist_trans,nav_map,max_plan_dist=30):
+	def __init__(self,dist_trans,nav_map,features = "icra1",max_plan_dist=30):
 		self.distance_transform=dist_trans
 		self.nav_map=nav_map
 		self.distance_dict = {"linear":linear,"exponential":np.exp,"log":safe_log,
 								"one_over":one_over}
+		# self.weights = np.ones(7)
+		# self.weights[0] = 3.
+		# self.weights[1] = 1.
+		# self.weights[2] = 0
+		# self.weights[-1]=2
+		# self.weights[-2]=1
+		# self.weights[-3]=7
+		# self.weights[-4]=2
 		self.weights = np.ones(7)
-		self.weights[0] = 3.
-		self.weights[1] = 1.
+		self.weights[0] = 0.1
+		self.weights[1] = 0.5
 		self.weights[2] = 0
-		self.weights[-1]=2
-		self.weights[-2]=1
-		self.weights[-3]=7
-		self.weights[-4]=2
+		self.weights[3]=1.
+		self.weights[4]=1.
+		self.weights[5]=1.
+		self.weights[6]=0
 		self.max_plan_dist = max_plan_dist
-		self.normaliser = self.icra_featureset_1_max(max_plan_dist)
-		self.featureset =self.icra_featureset_1
+		self.set_featureset(features)
 		self.people_sub = rospy.Subscriber("person_poses",
                                                       PersonArray,
                                                       self.ppl_cb,
@@ -51,8 +58,7 @@ class Cost_Manager(object):
 		self.origin = np.array([self.nav_map.info.origin.position.x,self.nav_map.info.origin.position.y])
 		self.res = self.nav_map.info.resolution
 		self.ref_path_nn =None
-		self.cov1 = np.array([0.8,0.8]);self.cov2 = np.array([1.2,0.2]);self.cov3 = np.array([0.2,1.2])
-		self.mean1 = np.array([0.,0.]);self.mean2 = np.array([1.,0.]);self.mean3 = np.array([-1.,0.]);
+
 	def ppl_cb(self,msg):
 		self.people_latest = msg
 		self.simple_ppl_poses = []
@@ -71,9 +77,11 @@ class Cost_Manager(object):
 		goal_f1 = self.distance_dict["linear"](goal_dst)
 		goal_f2 = self.distance_dict["exponential"](goal_dst)
 		goal_f3 = self.distance_dict["log"](goal_dst)
+
 		ppl_f1 = 0;ppl_f2=0;ppl_f3=0
 		if self.people_latest!=None:
 			dist =to_person_frame(robot_xy,self.simple_ppl_poses)
+			self.angled_step_feature(dist,0,0)
 			ppl_f1= self.gaussian_feature(dist,mean = self.mean1,cov = self.cov1)
 			ppl_f2= self.gaussian_feature(dist,mean = self.mean2,cov = self.cov2)
 			ppl_f3= self.gaussian_feature(dist,mean = self.mean3,cov = self.cov3)
@@ -87,6 +95,31 @@ class Cost_Manager(object):
 		max_ppl1 = 1;max_ppl2 = 1;max_ppl3 = 1;
 		max_obs_f1 = 10
 		return np.array([max_f1,max_f2,max_f3,max_ppl1,max_ppl2,max_ppl3,max_obs_f1])
+
+	def icra_featureset_2(self,robot_xy,goal_xy):
+		goal_dst = np.linalg.norm(robot_xy- goal_xy)
+		goal_f1 = self.distance_dict["linear"](goal_dst)
+		goal_f2 = self.distance_dict["exponential"](goal_dst)
+		goal_f3 = self.distance_dict["log"](goal_dst)
+		ppl_f1 = 0;ppl_f2=0;ppl_f3=0
+		if self.people_latest!=None:
+			dist =to_person_frame(robot_xy,self.simple_ppl_poses)
+			ppl_f1= self.angled_step_feature(dist,0.3,2)	
+			ppl_f2= self.angled_step_feature(dist,0.8,1)
+			ppl_f3= self.angled_step_feature(dist,1.5,0.5)
+		obstacle_dist = self.obstacle_dist(robot_xy)
+		obs_f1 = 4 - obstacle_dist
+		if obs_f1 <0:
+			obs_f1=0
+		return np.array([goal_f1,goal_f2,goal_f3,ppl_f1,ppl_f2,ppl_f3,obs_f1])/self.normaliser
+	def icra_featureset_2_max(self,max_plan_dist):
+		max_f1 = self.distance_dict["linear"](max_plan_dist)
+		max_f2 = self.distance_dict["exponential"](max_plan_dist)
+		max_f3 = self.distance_dict["log"](max_plan_dist)
+		max_ppl1 = 1;max_ppl2 = 1;max_ppl3 = 1;
+		max_obs_f1 = 4
+		return np.array([max_f1,max_f2,max_f3,max_ppl1,max_ppl2,max_ppl3,max_obs_f1])
+
 	def get_cost(self,robot_xy,goal_xy):
 		feat = self.featureset(robot_xy,goal_xy)
 		if self.ref_path_nn != None:
@@ -105,6 +138,29 @@ class Cost_Manager(object):
 		return 5
 	def gaussian_feature(self,xy,mean=np.array([0,0]),cov=np.array([1,1])):
 		return np.sum(np.exp(-1./2.*np.sum(((xy-mean)/cov)**2,axis=1)))
+
+	def angled_step_feature(self,xy,angle,distance):
+		d = np.linalg.norm(xy,axis=1)
+		angles = np.arctan2(xy[:,1],xy[:,0])
+		idx1 = np.where(np.abs(angles)<angle)[0]
+		idx2 = np.where(d<distance)[0]
+		return len(np.intersect1d(idx1,idx2))
+	def set_featureset(self,features):
+		if features == "icra1":
+			self.normaliser = self.icra_featureset_1_max(self.max_plan_dist)
+			self.featureset =self.icra_featureset_1
+			self.cov1 = np.array([0.8,0.8]);self.cov2 = np.array([1.2,0.2]);self.cov3 = np.array([0.2,1.2])
+			self.mean1 = np.array([0.,0.]);self.mean2 = np.array([1.,0.]);self.mean3 = np.array([-1.,0.]);
+		elif features == "icra2":
+			self.normaliser = self.icra_featureset_2_max(self.max_plan_dist)
+			self.featureset =self.icra_featureset_2
+		elif features =="icra3":
+			self.normaliser = self.icra_featureset_1_max(self.max_plan_dist)
+			self.featureset =self.icra_featureset_1
+			self.cov1 = np.array([0.3,0.3]);self.cov2 = np.array([0.3,0.3]);self.cov3 = np.array([0.3,0.3])
+			self.mean1 = np.array([0.,0.]);self.mean2 = np.array([.5,0.]);self.mean3 = np.array([-.5,0.]);
+		
+
 	def edge_cost(self,c1,c2,xy_1,xy_2):
 	    d = np.linalg.norm(xy_1-xy_2)
 	    return 0.5*(c1+c2)*d

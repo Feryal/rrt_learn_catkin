@@ -15,7 +15,7 @@ import rospy
 import roslib
 from rospy.numpy_msg import numpy_msg
 from sensor_msgs.msg import PointCloud, ChannelFloat32
-from sklearn.neighbors import NearestNeighbors,LSHForest
+from sklearn.neighbors import NearestNeighbors
 import time
 import threading
 import numpy as np
@@ -29,9 +29,7 @@ import matplotlib.pyplot as plt
 import itertools
 from helper_functions import pixel_to_point
 import cProfile, pstats, StringIO
-from pyflann import FLANN
 from scipy.ndimage.filters import gaussian_filter
-import Queue as Q
 from copy import deepcopy
 import rosbag
 from active_perception_controller.srv import positionChange,ppl_positionChange
@@ -55,8 +53,8 @@ class Evaluator(object):
         self.experiment_data = experiment_load2(self.directory)
         self.gt_weights = fn.pickle_loader(self.directory+"/weights.pkl")
         self.results1 = fn.pickle_loader(self.results_dir+"results_1.pkl")
-        self.results2 = fn.pickle_loader(self.results_dir+"results_2.pkl")
-        self.results3 = fn.pickle_loader(self.results_dir+"results_3.pkl")
+        self.results2 = fn.pickle_loader(self.results_dir+"results_1.pkl")
+        self.results3 = fn.pickle_loader(self.results_dir+"results_1.pkl")
        # self.results4 = fn.pickle_loader(self.results_dir+"results_4.pkl")
         self.planner = MotionPlanner()
         self.costlib = self.planner.cost_manager
@@ -79,7 +77,7 @@ class Evaluator(object):
         train_size = np.array(self.results1[method]["cost_diff"]).shape[1]*(1-self.results1[method]["validation_proportion"])
         cost_diff_val = np.mean(np.array(self.results1[method]["cost_diff"])[:,train_size:],axis=1)
         cost_diff_val = np.vstack([cost_diff_val,np.mean(np.array(self.results2[method]["cost_diff"])[:,train_size:],axis=1)])
-
+        print "WEIGHTS"+method,self.results2[method]["weights_final"]
         cost_diff_val = np.vstack([cost_diff_val,np.mean(np.array(self.results3[method]["cost_diff"])[:,train_size:],axis=1)])
         #cost_diff_val = np.vstack([cost_diff_val,np.mean(np.array(self.results4[method]["cost_diff"])[:,train_size:],axis=1)])
 

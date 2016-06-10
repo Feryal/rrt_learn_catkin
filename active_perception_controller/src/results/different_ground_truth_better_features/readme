@@ -1,0 +1,7 @@
+Learning parameters used: 
+------ 
+ 
+Experiment name:  unobserved_ground_truth
+Iteration:  10
+learning_rate:  0.3
+validation_proportion:  0.4

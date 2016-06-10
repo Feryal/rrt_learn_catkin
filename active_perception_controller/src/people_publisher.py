@@ -21,7 +21,6 @@ import helper_functions as fn
 from visualization_msgs.msg import Marker,MarkerArray
 from sensor_msgs.msg import LaserScan
 import rosbag
-from data_structures import person,path_container
 
 
 

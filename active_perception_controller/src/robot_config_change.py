@@ -23,7 +23,6 @@ from visualization_msgs.msg import Marker,MarkerArray
 from sensor_msgs.msg import LaserScan
 from active_perception_controller.srv import positionChange,ppl_positionChange
 import rosbag
-from data_structures import person,path_container
 
 class Robot_Position_Manager(object):
     def __init__(self):

@@ -23,7 +23,6 @@ from sensor_msgs.msg import LaserScan
 from people_publisher import People_Publisher
 from std_msgs.msg import Float32MultiArray
 import rosbag
-from data_structures import person,path_container
 import os
 from motion_planner import MotionPlanner
 from mmp import config_change
@@ -44,11 +43,11 @@ class Config_Publisher(object):
         self.goal_directory = goal_directory
         self.weights = None
         self.planner = MotionPlanner()
-        fn.pickle_saver(self.planner.cost_manager.weights,self.goal_directory+"/weights.pkl")
+        weight_info = {"feature_set":self.planner.planning_featureset,"weights":self.planner.cost_manager.weights}
+        fn.pickle_saver(weight_info,self.goal_directory+"/weights.pkl")
         fn.make_dir(goal_directory+'/traj_data/')
         rospy.on_shutdown(self.shutdown)
         #first bag file to record
-
         self.bag = rosbag.Bag(goal_directory+'/traj_data/quick.bag','w')
         self.tf_listener = tf.TransformListener()
         self.people_static = people_static
@@ -56,7 +55,7 @@ class Config_Publisher(object):
         # action client so send goals
         self.goal_pub = rospy.Publisher('move_base_simple/goal',PoseStamped,queue_size=1)
         # Dealing with cases when people are not detected.
-        self.new_people_message = False;self.people_message_timeout = 0;
+        self.new_people_message =False;self.people_message_timeout = 0;
         self.people_latest = PersonArray()
         self.new_bag = False
         #initialise extra markers and publisers for experiment
@@ -86,19 +85,15 @@ class Config_Publisher(object):
                 new_goal = np.random.randint(low = 0,high = len(self.goals))
         self.goal_index = new_goal
     def random_goal_loop(self):
-
         self.goal_index = 0
         self.initial_pose = self.construct_goal(self.goals[0][0],self.goals[0][1])
-
         while self.goals_sent!=self.max_goals:
-
             if self.goals_sent>0:
                 self.new_bag = True
                 self.bag.close()
                 self.bag = rosbag.Bag(self.goal_directory+'/traj_data/test'+str(self.goals_sent)+"_quick.bag",'w')
                 self.new_bag = False
             #this updates the current goal index
-
             self.get_random_goal()
             self.current_goal = self.construct_goal(self.goals[self.goal_index][0],self.goals[self.goal_index][1])
             #self.goal_pub.publish(self.current_goal)
@@ -109,8 +104,6 @@ class Config_Publisher(object):
             self.bag.write("people",self.people_latest)
             config_change(self.initial_pose,self.people_latest)
             self.planner._goal = self.current_goal
-            print "GOTHERE"
-            self.planner.planner = "astar"
             pose_path, array_path = self.planner.plan()
             rospy.sleep(2.)
             #self.planner.planner = "rrtstar"
@@ -160,7 +153,7 @@ class Config_Publisher(object):
 
 def listener():
     rospy.init_node('l',anonymous=True)
-    name = rospy.get_param("~experiment_name", "test")
+    name = rospy.get_param("~experiment_name", "test1")
     path = os.path.dirname(os.path.abspath(__file__))
     name = path+"/"+name
 
