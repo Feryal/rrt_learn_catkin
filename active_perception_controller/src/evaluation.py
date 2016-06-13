@@ -101,10 +101,10 @@ class Evaluator(object):
         # cost_diff_rrtstar_val = np.hstack([cost_diff_rrtstar_val,np.mean(np.array(self.results2["rrtstar"]["cost_diff"])[:,train_size:],axis=1)])
         # cost_diff_rrtstar_val = np.hstack([cost_diff_rrtstar_val,np.mean(np.array(self.results3["rrtstar"]["cost_diff"])[:,train_size:],axis=1)])
         # cost_diff_rrtstar_val = np.hstack([cost_diff_rrtstar_val,np.mean(np.array(self.results3["rrtstar"]["cost_diff"])[:,train_size:],axis=1)])
-        rrt_res = self.get_multiple_runs("rrtstar")
+        rrt_res = self.get_multiple_runs("cached_rrt")
         crrt_res = self.get_multiple_runs("cached_rrt")
         a08_res = self.get_multiple_runs("astar_0.8")
-        a03_res = self.get_multiple_runs("astar_0.3")
+        a03_res = self.get_multiple_runs("astar_0.8")
 
         # cost_diff_astar08 = np.array(self.results["astar_0.8"]["cost_diff"])[:,:10]
         # cost_diff_astar03 = np.array(self.results["astar_0.3"]["cost_diff"])[:,:10]
@@ -122,9 +122,6 @@ class Evaluator(object):
         # med_astar03 = np.median(cost_diff_astar03,axis = 1)
         # #avg_astar02 = np.sum(cost_diff_astar02,axis = 1)/cost_diff_astar02.shape[1]
         # med_cached = np.median(cost_diff_cached,axis = 1)
-
-        
-
         f = plt.figure()
         ax = f.add_subplot(111)
 

@@ -46,8 +46,8 @@
 	    <param name="rrt_eta" type="double" value="1.1" />
 	    <param name="planning_time" type="double" value="12"/>
 	    <param name="max_planning_time" type="double" value="20"/>
-	    <param name="experiment_name" type="string" value="unobserved_ground_truth"/>
-	    <param name="session_name" type="string" value="different_ground_truth_better_features"/>
+	    <param name="experiment_name" type="string" value="featureset_debug"/>
+	    <param name="session_name" type="string" value="different_ground_truth_better_features_reduced"/>
     </node>  		
 
 					<!--People to costmap -->

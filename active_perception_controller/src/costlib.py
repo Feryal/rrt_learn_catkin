@@ -41,13 +41,13 @@ class Cost_Manager(object):
 		# self.weights[-3]=7
 		# self.weights[-4]=2
 		self.weights = np.ones(7)
-		self.weights[0] = 0.1
+		self.weights[0] = 2.
 		self.weights[1] = 0.5
-		self.weights[2] = 0
-		self.weights[3]=1.
-		self.weights[4]=1.
-		self.weights[5]=1.
-		self.weights[6]=0
+		self.weights[2] = 0.
+		self.weights[3]=0.3
+		self.weights[4]=2.
+		self.weights[5]=0.5
+		self.weights[6]=0.4
 		self.max_plan_dist = max_plan_dist
 		self.set_featureset(features)
 		self.people_sub = rospy.Subscriber("person_poses",
@@ -104,9 +104,9 @@ class Cost_Manager(object):
 		ppl_f1 = 0;ppl_f2=0;ppl_f3=0
 		if self.people_latest!=None:
 			dist =to_person_frame(robot_xy,self.simple_ppl_poses)
-			ppl_f1= self.angled_step_feature(dist,0.3,2)	
+			ppl_f1= self.angled_step_feature(dist,0.3,1.5)	
 			ppl_f2= self.angled_step_feature(dist,0.8,1)
-			ppl_f3= self.angled_step_feature(dist,1.5,0.5)
+			ppl_f3= self.angled_step_feature(dist,3.15,0.3)
 		obstacle_dist = self.obstacle_dist(robot_xy)
 		obs_f1 = 4 - obstacle_dist
 		if obs_f1 <0:
@@ -158,7 +158,7 @@ class Cost_Manager(object):
 			self.normaliser = self.icra_featureset_1_max(self.max_plan_dist)
 			self.featureset =self.icra_featureset_1
 			self.cov1 = np.array([0.3,0.3]);self.cov2 = np.array([0.3,0.3]);self.cov3 = np.array([0.3,0.3])
-			self.mean1 = np.array([0.,0.]);self.mean2 = np.array([.5,0.]);self.mean3 = np.array([-.5,0.]);
+			self.mean1 = np.array([0.,0.]);self.mean2 = np.array([.7,0.]);self.mean3 = np.array([-.7,0.]);
 		
 
 	def edge_cost(self,c1,c2,xy_1,xy_2):

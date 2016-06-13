@@ -41,19 +41,18 @@
     </node>  
 
     					     <!-- RRT -->
-    <node pkg="active_perception_controller" type="mmp.py" name="mmp learner" output="screen">	
+    <node pkg="active_perception_controller" type="mmp.py" name="mmp_learner" output="screen">	
 	    <param name="rrt_eta" type="double" value="1.1" />
-	    <param name="planning_time" type="double" value="5"/>
+	    <param name="planning_time" type="double" value="10"/>
 	    <param name="max_planning_time" type="double" value="20"/>
-	    <param name="iterations" type="int" value="10"/>
-	    <param name="validation_proportion" type="double" value="0.4"/>	
-	    <param name="experiment_name" type="string" value="unobserved_ground_truth"/>
-	    <param name="learning_rate" type="double" value="0.3"/>
-	    <param name="session_name" type="string" value="different_ground_truth_better_features"/>
+	    <param name="iterations" type="int" value="15"/>
+	    <param name="validation_proportion" type="double" value="0.7"/>	
+	    <param name="experiment_name" type="string" value="featureset_debug"/>
+	    <param name="learning_rate" type="double" value="0.2"/>
+	    <param name="session_name" type="string" value="debug"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="astar"/>
 	    <param name="cost_featureset" type="string" value="icra3"/>
-
     </node>  		
 
 					<!--People to costmap -->
