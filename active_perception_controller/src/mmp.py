@@ -113,14 +113,12 @@ class Learner(object):
         #shuffle(self.experiment_data)
         self.costlib = self.planner.cost_manager
         self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
-
         self.baseline_eval = False
-
-        self.gt_weights = np.array([ 2. ,  0.5,  0. ,  3. ,  1. ,  0.5,  1. ])
-        fn.pickle_saver({"featureset":"icra2","weights":self.gt_weights},self.directory+"/weights.pkl")
+        #self.gt_weights = np.array([ 2. ,  0.5,  0. ,  0.3 ,  2. ,  0.5,  0.4 ])
+        #fn.pickle_saver({"featureset":"icra2","weights":self.gt_weights},self.directory+"/weights.pkl")
         loaded = fn.pickle_loader(self.directory+"/weights.pkl")
         self.gt_weights = loaded["weights"]
-        self.gt_featureset = loaded["featureset"]
+        self.gt_featureset = loaded["feature_set"]
         if self.gt_weights!=None:
             self.baseline_eval = True
 
@@ -143,10 +141,10 @@ class Learner(object):
         f.close()        
 
     def single_run(self,name):
-            results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
+            #results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
             # Then astar for 0.8
-            self.planner.astar_res = 0.8
-            results_astar_08 = self.learning_loop(self.planner,planner_type="astar")
+            #self.planner.astar_res = 0.8
+            #results_astar_08 = self.learning_loop(self.planner,planner_type="astar")
             # astar for 0.4
 
             # astar for 0.2
@@ -155,12 +153,10 @@ class Learner(object):
             # cached RRT star
             results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
 
-            self.planner.astar_res = 0.3
-            results_astar_03 = self.learning_loop(self.planner,planner_type="astar")
-            results = {"rrtstar":results_rrtstar,"astar_0.8":results_astar_08,"astar_0.3":results_astar_03,"cached_rrt":results_cached_rrt}
-            #results = {"astar_0.8":results_astar_08}
- 
-
+            #self.planner.astar_res = 0.3
+            #results_astar_03 = self.learning_loop(self.planner,planner_type="astar")
+            #results = {"rrtstar":results_rrtstar,"astar_0.8":results_astar_08,"astar_0.3":results_astar_03,"cached_rrt":results_cached_rrt}
+            results = {"cached_rrt":results_cached_rrt}
             fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
 
 
@@ -194,12 +190,12 @@ class Learner(object):
             i.feature_sum = self.feature_sums(i.path_array,i.goal_xy)
             all_feature_sums.append(i.feature_sum)
             if self.baseline_eval == True:
-                self.costlib.set_featureset(self.gt_featureset)
+                #self.costlib.set_featureset(self.gt_featureset)
                 i.gt_feature_sum =self.feature_sums(i.path_array,i.goal_xy)
-                i.path_cost = np.dot(self.gt_weights,i.feature_sum)
+                i.path_cost = np.dot(self.gt_weights,i.gt_feature_sum)
+                #self.costlib.set_featureset(self.planner.planning_featureset)
         feature_sum_variance = np.var(np.array(all_feature_sums),axis = 0)
 
-        self.costlib.set_featureset(self.planner.planning_featureset)
 
         for iteration in range(self.iterations):
             prev_grad = 0
@@ -256,11 +252,11 @@ class Learner(object):
                 # Baseline evaluation if possible.
                 if self.baseline_eval == True:
                     #calculate featuresums based on the ground truth featureset whatever that is
-                    self.costlib.set_featureset(self.gt_featureset)
+                    #self.costlib.set_featureset(self.gt_featureset)
                     gt_feature_sum = self.feature_sums(array_path,i.goal_xy)
                     path_base_cost = np.dot(self.gt_weights,gt_feature_sum)
                     iter_cost_diff.append(path_base_cost - i.path_cost)
-                    self.costlib.set_featureset(self.planner.planning_featureset)
+                    #self.costlib.set_featureset(self.planner.planning_featureset)
                           
                 print "PATH FEATURE SUM",path_feature_sum
                 iter_similarity.append(self.get_similarity(i.path_array,array_path))
