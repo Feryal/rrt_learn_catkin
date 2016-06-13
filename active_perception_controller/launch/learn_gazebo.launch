@@ -43,12 +43,12 @@
     					     <!-- RRT -->
     <node pkg="active_perception_controller" type="mmp.py" name="mmp learner" output="screen">	
 	    <param name="rrt_eta" type="double" value="1.1" />
-	    <param name="planning_time" type="double" value="5"/>
+	    <param name="planning_time" type="double" value="10"/>
 	    <param name="max_planning_time" type="double" value="20"/>
-	    <param name="iterations" type="int" value="10"/>
+	    <param name="iterations" type="int" value="20"/>
 	    <param name="validation_proportion" type="double" value="0.4"/>	
 	    <param name="experiment_name" type="string" value="unobserved_ground_truth"/>
-	    <param name="learning_rate" type="double" value="0.3"/>
+	    <param name="learning_rate" type="double" value="0.4"/>
 	    <param name="session_name" type="string" value="different_ground_truth_better_features"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="astar"/>
