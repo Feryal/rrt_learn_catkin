@@ -64,7 +64,7 @@ def experiment_load(directory):
                 elif topic == "goal":
                     ex.goal = msg
                     print msg
-                    ex.goal_xy = np.array([msg.pose.position.x,msg.pose.position.x])
+                    ex.goal_xy = np.array([msg.pose.position.x,msg.pose.position.y])
             bag.close()
             ex.nbrs.fit(ex.path_array)
             experiment.append(deepcopy(ex))
@@ -86,7 +86,7 @@ def experiment_load2(directory):
                     ex.people=msg
                 elif topic == "goal":
                     ex.goal = msg
-                    ex.goal_xy = np.array([msg.pose.position.x,msg.pose.position.x])
+                    ex.goal_xy = np.array([msg.pose.position.x,msg.pose.position.y])
             bag.close()
             ex.nbrs.fit(ex.path_array)
             experiment.append(deepcopy(ex))
@@ -97,7 +97,10 @@ class Learner(object):
     def __init__(self):
         self.iterations = rospy.get_param("~iterations", 10)
         self.learning_rate = rospy.get_param("~learning_rate", 0.5)
-        self.momentum = 0.0
+        self.time_margin_factor = rospy.get_param("~time_margin_factor", 1.0)
+
+        self.cache_size = rospy.get_param("~point_cache_size", 2500)
+        self.momentum = 0.2
         self.exp_name = rospy.get_param("~experiment_name", "workshop_data3")
         self.session_name = rospy.get_param("~session_name", "rrt_max_margin")
         self.path = os.path.dirname(os.path.abspath(__file__))
@@ -123,7 +126,7 @@ class Learner(object):
             self.baseline_eval = True
 
         self.write_learning_params(self.results_dir)
-        self.single_run("1")
+        self.pareto_run("1")
         #shuffle(self.experiment_data)
         #self.single_run("2")
         #shuffle(self.experiment_data)
@@ -140,24 +143,64 @@ class Learner(object):
         f.write("validation_proportion:  "+ str(self.validation_proportion) +"\n")
         f.close()        
 
+    def pareto_run(self,name):
+        # Pareto front run involves RRT at 2,5,8,10 seconds
+        results = {}
+        self.planner.planning_time = 2;self.planner.max_planning_time = 2
+        self.cache_size = 1400
+        results["rrt_2"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["crrt_2"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+
+        self.planner.planning_time = 2;self.planner.max_planning_time = 5
+        self.cache_size = 2300
+        results["rrt_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["crrt_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+
+        self.planner.planning_time = 2;self.planner.max_planning_time = 8
+        self.cache_size = 2900
+        results["rrt_8"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["crrt_8"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+
+        self.planner.planning_time = 2;self.planner.max_planning_time = 10
+        self.cache_size = 3300
+        results["rrt_10"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["crrt_10"]= self.learning_loop(self.planner,planner_type="cached_rrt")      
+
+        # Then astar for 0.8
+        self.planner.astar_res = 0.8
+        results["astar_0.8"]=  self.learning_loop(self.planner,planner_type="astar")
+        # astar for 0.4
+        self.planner.astar_res = 0.8
+        results["astar_0.5"]= self.learning_loop(self.planner,planner_type="astar")
+
+        self.planner.astar_res = 0.8
+        results["astar_0.3"]=  self.learning_loop(self.planner,planner_type="astar")
+
+        self.planner.astar_res = 0.8
+        results["astar_0.2"]=  self.learning_loop(self.planner,planner_type="astar")
+        #results = {"star_0.8":results_astar_08}
+        fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
+
+
     def single_run(self,name):
-            #results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
-            # Then astar for 0.8
-            #self.planner.astar_res = 0.8
-            #results_astar_08 = self.learning_loop(self.planner,planner_type="astar")
-            # astar for 0.4
 
-            # astar for 0.2
-            #self.planner.astar_res = 0.2
-            #results_astar_02 = self.learning_loop(self.planner,planner_type="astar")
-            # cached RRT star
-            results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
+        results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
+        # Then astar for 0.8
+        self.planner.astar_res = 0.8
+        results_astar_08 = self.learning_loop(self.planner,planner_type="astar")
+        # astar for 0.4
 
-            #self.planner.astar_res = 0.3
-            #results_astar_03 = self.learning_loop(self.planner,planner_type="astar")
-            #results = {"rrtstar":results_rrtstar,"astar_0.8":results_astar_08,"astar_0.3":results_astar_03,"cached_rrt":results_cached_rrt}
-            results = {"cached_rrt":results_cached_rrt}
-            fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
+        # astar for 0.2
+        #self.planner.astar_res = 0.2
+        #results_astar_02 = self.learning_loop(self.planner,planner_type="astar")
+        # cached RRT star
+        results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
+
+        self.planner.astar_res = 0.3
+        results_astar_03 = self.learning_loop(self.planner,planner_type="astar")
+        results = {"rrtstar":results_rrtstar,"astar_0.8":results_astar_08,"astar_0.3":results_astar_03,"cached_rrt":results_cached_rrt}
+        #results = {"star_0.8":results_astar_08}
+        fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
 
 
         #self.robot_pose_srv = rospy.ServiceProxy('change_robot_position', positionChange)
@@ -176,7 +219,8 @@ class Learner(object):
 
         # Initialise weights.
         self.learner_weights = np.zeros(self.costlib.weights.shape[0])
-        self.learner_weights[0] = 5 # some cost for distance
+        self.learner_weights[1] = 1
+        self.learner_weights[0] = 1# some cost for distance
         validating = False
         similarity = []
         cost_diff = []
@@ -188,13 +232,14 @@ class Learner(object):
             self.ppl_pub.publish(i.people)
             rospy.sleep(0.5)
             i.feature_sum = self.feature_sums(i.path_array,i.goal_xy)
-            all_feature_sums.append(i.feature_sum)
+            all_feature_sums.append(i.feature_sum/len(i.path_array))
             if self.baseline_eval == True:
-                #self.costlib.set_featureset(self.gt_featureset)
+                self.costlib.set_featureset(self.gt_featureset)
                 i.gt_feature_sum =self.feature_sums(i.path_array,i.goal_xy)
                 i.path_cost = np.dot(self.gt_weights,i.gt_feature_sum)
-                #self.costlib.set_featureset(self.planner.planning_featureset)
+                self.costlib.set_featureset(self.planner.planning_featureset)
         feature_sum_variance = np.var(np.array(all_feature_sums),axis = 0)
+        print "FEATURE SUM VARIANCE",feature_sum_variance
 
 
         for iteration in range(self.iterations):
@@ -219,7 +264,7 @@ class Learner(object):
 
                 if validating==False and planner_type=="cached_rrt" and iteration==0:
                     tic = time.time()
-                    cached_trees.append(motion_planner.make_cached_rrt(motion_planner.sample_goal_bias,points_to_cache=2500 ))
+                    cached_trees.append(motion_planner.make_cached_rrt(motion_planner.sample_goal_bias,points_to_cache=self.+cache_size))
                     toc = time.time()
                     time_to_cache.append(toc-tic) 
 
@@ -227,6 +272,8 @@ class Learner(object):
                     self.costlib.ref_path_nn = i.nbrs
                     tic = time.time()
                     if planner_type!="cached_rrt":
+                        # if there is a time margin factor it will be used during the learning planning step
+                        motion_planner.planning_time*=self.time_margin_factor
                         pose_path_la,array_path_la = motion_planner.plan()
                     else:
                         pose_path_la,array_path_la = motion_planner.plan_cached_rrt(cached_trees[n])
@@ -234,6 +281,8 @@ class Learner(object):
                     iter_time.append(toc-tic)
 
                 self.costlib.ref_path_nn = None
+                # recover time margin factor to normal planning time.
+                motion_planner.planning_time*=1/self.time_margin_factor
                 pose_path,array_path = motion_planner.plan()
 
                 if iteration ==0:
@@ -252,11 +301,12 @@ class Learner(object):
                 # Baseline evaluation if possible.
                 if self.baseline_eval == True:
                     #calculate featuresums based on the ground truth featureset whatever that is
-                    #self.costlib.set_featureset(self.gt_featureset)
+                    self.costlib.set_featureset(self.gt_featureset)
                     gt_feature_sum = self.feature_sums(array_path,i.goal_xy)
                     path_base_cost = np.dot(self.gt_weights,gt_feature_sum)
                     iter_cost_diff.append(path_base_cost - i.path_cost)
-                    #self.costlib.set_featureset(self.planner.planning_featureset)
+                    self.costlib.set_featureset(self.planner.planning_featureset)
+                print "COST DIFFERENCE", iter_cost_diff
                           
                 print "PATH FEATURE SUM",path_feature_sum
                 iter_similarity.append(self.get_similarity(i.path_array,array_path))

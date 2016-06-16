@@ -161,6 +161,7 @@ class MotionPlanner():
         self._costmap_pub.publish(self.costmap)
     def goal_recieved(self,msg):
         self._goal = msg
+        print "GOAL RECIEVED"
         #tick = time.time()
         #self.update_costmap()
         #toc = time.time()

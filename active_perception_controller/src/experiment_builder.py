@@ -6,10 +6,10 @@ import numpy as np
 import helper_functions as fn
 import pdb
 import os
-from data_structures import person,path_container
 from active_perception_controller.msg import Person,PersonArray
 from geometry_msgs.msg import PoseStamped,PoseWithCovarianceStamped,Pose,PointStamped
 import tf
+from visualization_msgs.msg import Marker,MarkerArray
 
 class Goal_Collector(object):
     # this class listens to published points or RViZ and logs them down,
@@ -46,7 +46,8 @@ class People_Collector(object):
         self.no_of_people = rospy.get_param("~number_of_people", 3)
         self.save_name = name
         # create data containers
-
+        self.point_pub = rospy.Publisher('all_clicked',MarkerArray,queue_size = 200)
+        self.all_points = MarkerArray()
         self.people = []
         for i in range(self.no_of_people):
             p = PersonArray()
@@ -85,6 +86,17 @@ class People_Collector(object):
             print "NEW PERSON"
             print "Registered point",data.point.x,data.point.y
             print "For Person",self.current_person
+
+        marker = Marker()
+        marker.type = Marker.CUBE
+        marker.header.frame_id = "map"
+        marker.header.stamp = rospy.get_rostime()
+        marker.pose.position.x = data.point.x;marker.pose.position.y = data.point.y;marker.pose.position.z = 2.5
+        marker.scale.x = 0.3;marker.scale.y=0.3;marker.scale.z=0.3
+        marker.color.a=1.0;marker.color.g=1.0
+        marker.id = len(self.all_points.markers)
+        self.all_points.markers.append(marker)
+        self.point_pub.publish(self.all_points)
     def shutdown(self):
         print "Shutting down people collector"
 

@@ -42,8 +42,8 @@ from mmp import experiment_load2
 
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "workshop_data3")
-        self.session_name = rospy.get_param("~session_name", "learning_final")
+        self.exp_name = rospy.get_param("~experiment_name", "different_featureset_new")
+        self.session_name = rospy.get_param("~session_name", "debug3")
         self.filepath = os.path.dirname(os.path.abspath(__file__))
         self.directory = self.filepath+"/"+self.exp_name
         # RESULTS IS A DICT OF:
@@ -56,13 +56,14 @@ class Evaluator(object):
         self.results2 = fn.pickle_loader(self.results_dir+"results_1.pkl")
         self.results3 = fn.pickle_loader(self.results_dir+"results_1.pkl")
        # self.results4 = fn.pickle_loader(self.results_dir+"results_4.pkl")
-        self.planner = MotionPlanner()
-        self.costlib = self.planner.cost_manager
+
         #self.results2 = fn.pickle_loader(self.results_dir+"results_rrt_08.pkl")
         #self.results["astar_0.8"] = self.results2["astar_0.8"]
         #self.results["rrtstar"] = self.results2["rrtstar"]
         #fn.pickle_saver(self.results,self.results_dir+"results.pkl") 
         self.plots()
+        self.planner = MotionPlanner()
+        self.costlib = self.planner.cost_manager
         self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
         self.expert_path_pub = rospy.Publisher("expert_path",Path,queue_size = 1)
         self.initial_paths_pub = rospy.Publisher("initial_weights_path",Path,queue_size = 1)
@@ -101,10 +102,10 @@ class Evaluator(object):
         # cost_diff_rrtstar_val = np.hstack([cost_diff_rrtstar_val,np.mean(np.array(self.results2["rrtstar"]["cost_diff"])[:,train_size:],axis=1)])
         # cost_diff_rrtstar_val = np.hstack([cost_diff_rrtstar_val,np.mean(np.array(self.results3["rrtstar"]["cost_diff"])[:,train_size:],axis=1)])
         # cost_diff_rrtstar_val = np.hstack([cost_diff_rrtstar_val,np.mean(np.array(self.results3["rrtstar"]["cost_diff"])[:,train_size:],axis=1)])
-        rrt_res = self.get_multiple_runs("cached_rrt")
+        rrt_res = self.get_multiple_runs("rrtstar")
         crrt_res = self.get_multiple_runs("cached_rrt")
         a08_res = self.get_multiple_runs("astar_0.8")
-        a03_res = self.get_multiple_runs("astar_0.8")
+        a03_res = self.get_multiple_runs("astar_0.3")
 
         # cost_diff_astar08 = np.array(self.results["astar_0.8"]["cost_diff"])[:,:10]
         # cost_diff_astar03 = np.array(self.results["astar_0.3"]["cost_diff"])[:,:10]

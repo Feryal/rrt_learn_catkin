@@ -36,14 +36,11 @@
         <remap from="map" to="/map"/>
     </node>
     					     <!-- RRT -->
-    <!--node pkg="active_perception_controller" type="motion_planner.py" name="entropy_motion_planner" output="screen">
-	    <param name="rrt_nearest_part_bias" type="double" value="0.2" />
-	    <param name="rrt_total_dist_bias" type="double" value="0.05" />
-	    <param name="rrt_entropy_bias" type="double" value="10" />
-	    <param name="max_rrt_iterations" type="int" value="500" />
-	    <param name="max_path_size" type="int" value="20" />	
-	    <param name="rrt_eta" type="double" value="1.2" />
-    </node-->  
+    <node pkg="active_perception_controller" type="motion_planner.py" name="entropy_motion_planner" output="screen">
+	    <param name="rrt_eta" type="double" value="1.1" />
+	    <param name="planning_time" type="double" value="10"/>
+	    <param name="max_planning_time" type="double" value="20"/>
+    </node>  
     
 
 </launch>

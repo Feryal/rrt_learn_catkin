@@ -75,9 +75,8 @@ class Cost_Manager(object):
 	def icra_featureset_1(self,robot_xy,goal_xy):
 		goal_dst = np.linalg.norm(robot_xy- goal_xy)
 		goal_f1 = self.distance_dict["linear"](goal_dst)
-		goal_f2 = self.distance_dict["exponential"](goal_dst)
+		goal_f2 = self.distance_dict["exponential"](goal_dst/7)
 		goal_f3 = self.distance_dict["log"](goal_dst)
-
 		ppl_f1 = 0;ppl_f2=0;ppl_f3=0
 		if self.people_latest!=None:
 			dist =to_person_frame(robot_xy,self.simple_ppl_poses)
@@ -90,7 +89,7 @@ class Cost_Manager(object):
 		return np.array([goal_f1,goal_f2,goal_f3,ppl_f1,ppl_f2,ppl_f3,obs_f1])/self.normaliser
 	def icra_featureset_1_max(self,max_plan_dist):
 		max_f1 = self.distance_dict["linear"](max_plan_dist)
-		max_f2 = self.distance_dict["exponential"](max_plan_dist)
+		max_f2 = self.distance_dict["exponential"](max_plan_dist/7)
 		max_f3 = self.distance_dict["log"](max_plan_dist)
 		max_ppl1 = 1;max_ppl2 = 1;max_ppl3 = 1;
 		max_obs_f1 = 10
@@ -127,7 +126,6 @@ class Cost_Manager(object):
 			if c <0:
 				c=0
 			return c
-			
 		else:
 			return np.dot(self.weights,feat)
 			
