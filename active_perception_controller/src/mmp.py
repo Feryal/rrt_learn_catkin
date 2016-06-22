@@ -126,13 +126,14 @@ class Learner(object):
             self.baseline_eval = True
 
         self.write_learning_params(self.results_dir)
-        self.pareto_run("1")
-        #shuffle(self.experiment_data)
-        #self.single_run("2")
-        #shuffle(self.experiment_data)
-        #self.single_run("3")
-        #shuffle(self.experiment_data)
-        #self.single_run("4")
+        shuffle(self.experiment_data)
+        self.pareto_run("2")
+        shuffle(self.experiment_data)
+        self.single_run("3")
+        shuffle(self.experiment_data)
+        self.single_run("4")
+        shuffle(self.experiment_data)
+        self.single_run("5")
 
     def write_learning_params(self,directory):
         f = open(directory+"readme","w")
@@ -151,17 +152,17 @@ class Learner(object):
         results["rrt_2"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["crrt_2"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
-        self.planner.planning_time = 2;self.planner.max_planning_time = 5
+        self.planner.planning_time = 5;self.planner.max_planning_time = 5
         self.cache_size = 2300
         results["rrt_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["crrt_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
-        self.planner.planning_time = 2;self.planner.max_planning_time = 8
+        self.planner.planning_time = 8;self.planner.max_planning_time = 8
         self.cache_size = 2900
         results["rrt_8"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["crrt_8"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
-        self.planner.planning_time = 2;self.planner.max_planning_time = 10
+        self.planner.planning_time = 10;self.planner.max_planning_time = 10
         self.cache_size = 3300
         results["rrt_10"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["crrt_10"]= self.learning_loop(self.planner,planner_type="cached_rrt")      
@@ -170,13 +171,13 @@ class Learner(object):
         self.planner.astar_res = 0.8
         results["astar_0.8"]=  self.learning_loop(self.planner,planner_type="astar")
         # astar for 0.4
-        self.planner.astar_res = 0.8
+        self.planner.astar_res = 0.5
         results["astar_0.5"]= self.learning_loop(self.planner,planner_type="astar")
 
-        self.planner.astar_res = 0.8
+        self.planner.astar_res = 0.3
         results["astar_0.3"]=  self.learning_loop(self.planner,planner_type="astar")
 
-        self.planner.astar_res = 0.8
+        self.planner.astar_res = 0.2
         results["astar_0.2"]=  self.learning_loop(self.planner,planner_type="astar")
         #results = {"star_0.8":results_astar_08}
         fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
@@ -264,7 +265,7 @@ class Learner(object):
 
                 if validating==False and planner_type=="cached_rrt" and iteration==0:
                     tic = time.time()
-                    cached_trees.append(motion_planner.make_cached_rrt(motion_planner.sample_goal_bias,points_to_cache=self.+cache_size))
+                    cached_trees.append(motion_planner.make_cached_rrt(motion_planner.sample_goal_bias,points_to_cache=self.cache_size))
                     toc = time.time()
                     time_to_cache.append(toc-tic) 
 
@@ -395,18 +396,6 @@ def config_change(robotPose, personPoses):
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
-
-
-# 1. Load the rosbags from a directory.
-
-# 2. Initialise a motion planner with a weight vector.
-# 3. Initialise the initial initial conditions publisher to move things around
-# 4. Calculate feature sums for the example paths.
-        
-# if __name__=='__main__':
-#     rospy.init_node('entropy_motion_planner')
-#     m = MotionPlanner()
-#     rospy.spin()
 if __name__=='__main__':
     rospy.init_node('mmp_learner')
     m = Learner()
