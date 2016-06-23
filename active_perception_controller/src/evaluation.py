@@ -42,9 +42,9 @@ from mmp import experiment_load2
 
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "different_featureset_new")
-        self.session_name = rospy.get_param("~session_name", "debug3")
-        self.no_of_runs = rospy.get_param( "number_of_runs",1)
+        self.exp_name = rospy.get_param("~experiment_name", "15_6_more_people")
+        self.session_name = rospy.get_param("~session_name", "pareto_front_full")
+        self.no_of_runs = rospy.get_param( "number_of_runs",5)
         self.filepath = os.path.dirname(os.path.abspath(__file__))
         self.directory = self.filepath+"/"+self.exp_name
         # RESULTS IS A DICT OF:
@@ -54,25 +54,28 @@ class Evaluator(object):
         self.experiment_data = experiment_load2(self.directory)
         self.gt_weights = fn.pickle_loader(self.directory+"/weights.pkl")
         self.results = [];
+        print self.results_dir
+        print "gothere"
         for i in range(self.no_of_runs):
             self.results.append(fn.pickle_loader(self.results_dir+"results_"+str(i+1)+".pkl"))
-
+        self.results = self.results[:3]
+        self.no_of_runs=2
         self.plots()
-        self.planner = MotionPlanner()
-        self.costlib = self.planner.cost_manager
-        self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
-        self.expert_path_pub = rospy.Publisher("expert_path",Path,queue_size = 1)
-        self.initial_paths_pub = rospy.Publisher("initial_weights_path",Path,queue_size = 1)
-        self.final_paths_pub = rospy.Publisher("final_weights_path",Path,queue_size = 1)
-        self.point_sub = rospy.Subscriber("clicked_point",PointStamped,self.point_cb)
-        self.astar_03_path_pub = rospy.Publisher("astar03_path",Path,queue_size = 1)
-        self.astar_08_path_pub = rospy.Publisher("astar08_path",Path,queue_size = 1)
-        self.crlt_path_pub = rospy.Publisher("crlt_path",Path,queue_size = 1)
-        self.visualization_counter = 0
+        # self.planner = MotionPlanner()
+        # self.costlib = self.planner.cost_manager
+        # self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
+        # self.expert_path_pub = rospy.Publisher("expert_path",Path,queue_size = 1)
+        # self.initial_paths_pub = rospy.Publisher("initial_weights_path",Path,queue_size = 1)
+        # self.final_paths_pub = rospy.Publisher("final_weights_path",Path,queue_size = 1)
+        # self.point_sub = rospy.Subscriber("clicked_point",PointStamped,self.point_cb)
+        # self.astar_03_path_pub = rospy.Publisher("astar03_path",Path,queue_size = 1)
+        # self.astar_08_path_pub = rospy.Publisher("astar08_path",Path,queue_size = 1)
+        # self.crlt_path_pub = rospy.Publisher("crlt_path",Path,queue_size = 1)
+        # self.visualization_counter = 0
 
     def get_multiple_runs(self,method):
         time_taken = []
-
+        print method
         for i in range(self.no_of_runs):
             time_taken.append(np.sum(self.results[i][method]["time_per_iter"]) + self.results[i][method]["time_to_cache"])
             train_size = np.array(self.results[i][method]["cost_diff"]).shape[1]*(1-self.results[i][method]["validation_proportion"])
@@ -83,19 +86,19 @@ class Evaluator(object):
             cost_diff_train = np.vstack([cost_diff_train,np.mean(np.array(self.results[i][method]["cost_diff"])[:,:train_size],axis=1)])
         # return the mean and standard error across runs
         val_mean = np.mean(cost_diff_val,axis=0)
-        val_std_err = np.std(cost_diff_val,axis=0)/np.sqrt(cost_diff_val.shape[1])
+        val_std_err = np.std(cost_diff_val,axis=0)/np.sqrt(self.no_of_runs)
         train_mean = np.mean(cost_diff_train,axis=0)
-        train_std_err = np.std(cost_diff_train,axis=0)/np.sqrt(cost_diff_train.shape[1])
+        train_std_err = np.std(cost_diff_train,axis=0)/np.sqrt(self.no_of_runs)
         time_mean = np.mean(time_taken)
         time_std = np.std(time_taken)
         return train_mean,train_std_err,val_mean,val_std_err,time_mean,time_std
 
     def plots(self):
         results_for_plots = []
-        for method in self.results[0].keys():
+
+        for method in self.results[1].keys():
             results_for_plots.append(self.get_multiple_runs(method))
 
-        print results_for_plots
 
         f = plt.figure()
         ax = f.add_subplot(111)
@@ -121,11 +124,11 @@ class Evaluator(object):
         f = plt.figure()
         ax = f.add_subplot(111)
         for n,method in enumerate(self.results[0].keys()):
-            if method !="astar_0.2":
+            if method !="p":
                 res = results_for_plots[n]
                 print res
-                plt.scatter(res[0][-1],res[-2],label = method)
-                plt.annotate(method,xy=(res[0][-1],res[-2]))
+                plt.errorbar(res[0][-1],res[-2],label = method,fmt="o",xerr = res[1][-1])
+                plt.annotate(method,xy=(res[0][-1]+0.1,res[-2]+0.1))
         #plt.legend(bbox_to_anchor=(1., 1,0.,-0.06),loc=1)
         ax.set_ylabel("Time Taken",fontweight = 'bold',fontsize = 14)
         ax.set_xlabel("Average Cost Difference",fontweight='bold',fontsize = 14)
@@ -134,11 +137,10 @@ class Evaluator(object):
         f = plt.figure()
         ax = f.add_subplot(111)
         for n,method in enumerate(self.results[0].keys()):
-            if method !="astar_0.2":
+            if method !="p":
                 res = results_for_plots[n]
-                print res
-                plt.scatter(res[2][-1],res[-2],label = method)
-                plt.annotate(method,xy=(res[2][-1],res[-2]))
+                plt.errorbar(res[2][-1],res[-2],label = method,fmt="o",xerr = res[3][-1])
+                plt.annotate(method,xy=(res[2][-1]+0.1,res[-2]+0.1))
         #plt.legend(bbox_to_anchor=(1., 1,0.,-0.06),loc=1)
         ax.set_ylabel("Time Taken",fontweight = 'bold',fontsize = 14)
         ax.set_xlabel("Average Cost Difference",fontweight='bold',fontsize = 14)

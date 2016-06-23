@@ -129,11 +129,11 @@ class Learner(object):
         shuffle(self.experiment_data)
         self.pareto_run("2")
         shuffle(self.experiment_data)
-        self.single_run("3")
+        self.pareto_run("3")
         shuffle(self.experiment_data)
-        self.single_run("4")
+        self.pareto_run("4")
         shuffle(self.experiment_data)
-        self.single_run("5")
+        self.pareto_run("5")
 
     def write_learning_params(self,directory):
         f = open(directory+"readme","w")
