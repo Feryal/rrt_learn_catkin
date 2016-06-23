@@ -95,6 +95,7 @@ class Evaluator(object):
         for method in self.results[0].keys():
             results_for_plots.append(self.get_multiple_runs(method))
 
+        print results_for_plots
 
         f = plt.figure()
         ax = f.add_subplot(111)
