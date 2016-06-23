@@ -23,6 +23,7 @@ from sensor_msgs.msg import LaserScan
 from people_publisher import People_Publisher
 from std_msgs.msg import Float32MultiArray
 import rosbag
+from active_perception_controller.srv import positionChange,ppl_positionChange
 from data_structures import person,path_container
 import os
 
@@ -39,7 +40,7 @@ class Config_Publisher(object):
         self.goals_sent = 0
         self.succeded = 0
         self.goal_index = 100
-        self.mode=mode
+        self.mode=1
         self.goal_directory = goal_directory
         self.weights = None
         fn.pickle_saver(self.weights,self.goal_directory+"/weights.pkl")
@@ -50,7 +51,7 @@ class Config_Publisher(object):
         self.bag = rosbag.Bag(goal_directory+'/traj_data/test.bag','w')
         self.tf_listener = tf.TransformListener()
         self.people_static = people_static
-        #self.set_initial_position() # initial position set based on the first place in goals
+        self.set_initial_position() # initial position set based on the first place in goals
         self.goal_states = ['PENDING', 'ACTIVE', 'PREEMPTED', 
                'SUCCEEDED', 'ABORTED', 'REJECTED',
                'PREEMPTING', 'RECALLING', 'RECALLED',
@@ -90,11 +91,11 @@ class Config_Publisher(object):
 
     def set_initial_position(self):
         self.goal_index=0
-        self.construct_goal(self.goals[0][0],self.goals[0][1])
+        init = self.construct_goal(self.goals[0][0],self.goals[0][1])
         rospy.wait_for_service('change_robot_position')
         try:
             pc = rospy.ServiceProxy('change_robot_position', positionChange)
-            pc(self.current_goal.pose.pose)
+            pc(init.pose)
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
     def get_random_goal(self):
@@ -116,9 +117,9 @@ class Config_Publisher(object):
                 self.new_bag = False
             #this updates the current goal index
             self.get_random_goal()
-            self.construct_goal(self.goals[self.goal_index][0],self.goals[self.goal_index][1])
-            self.goal_pub.publish(self.current_goal.target_pose)
-            self.bag.write("goal",self.current_goal.target_pose)
+            self.current_goal = self.construct_goal(self.goals[self.goal_index][0],self.goals[self.goal_index][1])
+            #self.goal_pub.publish(self.current_goal)
+            self.bag.write("goal",self.current_goal)
             self.visualise_goal()
             # Publish random people position
             if self.people_static == True:
@@ -174,8 +175,8 @@ class Config_Publisher(object):
               #rospy.loginfo("Goal failed with error code: " + str(self.goal_states[state]))
 
     def goal_check(self,tolerance):
-        diff_x = np.absolute(self.current_goal.target_pose.pose.position.x - self.pose_latest.pose.position.x)
-        diff_y = np.absolute(self.current_goal.target_pose.pose.position.y - self.pose_latest.pose.position.y)
+        diff_x = np.absolute(self.current_goal.pose.position.x - self.pose_latest.pose.position.x)
+        diff_y = np.absolute(self.current_goal.pose.position.y - self.pose_latest.pose.position.y)
         #diff_z = np.absolute(self.current_goal.target_pose.pose.orientation.z - self.pose_latest.pose.orientation.z)
         #diff_w = np.absolute(self.current_goal.target_pose.pose.orientation.w - self.pose_latest.pose.orientation.w)
         if diff_x<tolerance and diff_y<tolerance:
@@ -183,16 +184,17 @@ class Config_Publisher(object):
         else:
             return False
     def construct_goal(self,x,y):
-        goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = 'map'
-        goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose.position.x = x
-        goal.target_pose.pose.position.y = y
+        goal = PoseStamped()
+        goal.header.frame_id = 'map'
+        goal.header.stamp = rospy.Time.now()
+        goal.pose.position.x = x
+        goal.pose.position.y = y
         orient = np.random.uniform(-np.pi,np.pi)
         out = tf.transformations.quaternion_from_euler(0,0,orient)
-        goal.target_pose.pose.orientation.z=out[-2]
-        goal.target_pose.pose.orientation.w=out[-1]
-        self.current_goal = goal
+        goal.pose.orientation.z=out[-2]
+        goal.pose.orientation.w=out[-1]
+        return goal
+
     def initialise_marker(self):
         self.goal_marker = Marker()
         self.goal_marker.type = Marker.CUBE
@@ -209,7 +211,7 @@ class Config_Publisher(object):
     def visualise_goal(self):
         if self.goal_index != None:
             self.goal_marker.color.a=1.0
-            self.goal_marker.pose = self.current_goal.target_pose.pose
+            self.goal_marker.pose = self.current_goal.pose
         self.pub1.publish(self.goal_marker)
     def pos_marker_callback(self,msg):
         self.pub2.publish(self.orient_marker)
@@ -251,6 +253,7 @@ def listener():
         mode=AUTO
     else:
         mode=TELEOP
+    print "MODE IS", mode
     p = Config_Publisher(mode,name,people_static=people_static)
 
     #goal_collector = Config_Publisher(AUTO,"LesArcades_no_chairs")

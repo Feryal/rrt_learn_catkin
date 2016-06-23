@@ -12,6 +12,9 @@
   <node pkg="laser_assembler" type="laser_assembler" name="laser_assembler" args="/scanback /scanfront">
   </node>
 
+  <node pkg="active_perception_controller" type="joy_to_giraff_simple.py" name="joy">
+  </node>
+
 <!--include file="$(find active_perception_controller)/launch/laser_assemble.launch" /-->
 					<!-- AMCL-->
     <include file="$(find rrt_learn_gazebo)/launch/amcl.launch" />
@@ -44,11 +47,15 @@
 
 					 <!-- Experiment Runner -->
     <node pkg="active_perception_controller" type="experiment_runner.py" name="experiment_runner" output="screen">
-	    <param name="datapoints_to_collect" type="int" value="5" />
+	    <param name="datapoints_to_collect" type="int" value="3" />
 	    <param name="people_static" type="boolean" value="True" />
-	    <param name="experiment_name" type="string" value="test2" />
-	    <param name="drive_mode" type="int" value="2" />
+	    <param name="experiment_name" type="string" value="more_people_real" />
+	    <param name="drive_mode" type="int" value="1" />
     </node>
+
+				<!--Configuration Changer -->
+    <node pkg="active_perception_controller" type="robot_config_change.py" name="config_changer" output="screen">
+    </node>  
 
 					<!--People to costmap -->
     <node pkg="active_perception_controller" type="people_to_costmap.py" name="people_costmap" output="screen">
