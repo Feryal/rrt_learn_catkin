@@ -128,13 +128,22 @@ class Learner(object):
         self.write_learning_params(self.results_dir)
         shuffle(self.experiment_data)
         self.pareto_run("2")
-        shuffle(self.experiment_data)
-        self.pareto_run("3")
-        shuffle(self.experiment_data)
-        self.pareto_run("4")
-        shuffle(self.experiment_data)
-        self.pareto_run("5")
-
+        #self.pareto_run("2")
+        #shuffle(self.experiment_data)
+        #self.pareto_run("3")
+        #shuffle(self.experiment_data)
+        #self.pareto_run("4")
+        #shuffle(self.experiment_data)
+        #self.pareto_run("5")
+        #self.time_margin_run("1")
+        #shuffle(self.experiment_data)
+        #self.time_margin_run("2")
+        #shuffle(self.experiment_data)
+        #self.time_margin_run("3")
+        #shuffle(self.experiment_data)
+        #self.time_margin_run("4")
+        #shuffle(self.experiment_data)
+        #self.time_margin_run("5")
     def write_learning_params(self,directory):
         f = open(directory+"readme","w")
         f.write("Learning parameters used: \n------ \n \n")
@@ -149,38 +158,57 @@ class Learner(object):
         results = {}
         self.planner.planning_time = 2;self.planner.max_planning_time = 2
         self.cache_size = 1400
-        results["rrt_2"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_2"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+        results["RLT-NC_2"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["RLT_2"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
         self.planner.planning_time = 5;self.planner.max_planning_time = 5
         self.cache_size = 2300
-        results["rrt_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+        results["RLT-NC_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["RLT_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
         self.planner.planning_time = 8;self.planner.max_planning_time = 8
         self.cache_size = 2900
-        results["rrt_8"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_8"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+        results["RLT-NC_8"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["RLT_8"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
         self.planner.planning_time = 10;self.planner.max_planning_time = 10
         self.cache_size = 3300
-        results["rrt_10"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_10"]= self.learning_loop(self.planner,planner_type="cached_rrt")      
+        results["RLT-NC_10"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["RLT_10"]= self.learning_loop(self.planner,planner_type="cached_rrt")      
 
         # Then astar for 0.8
         self.planner.astar_res = 0.8
-        results["astar_0.8"]=  self.learning_loop(self.planner,planner_type="astar")
+        results["MMP_0.8"]=  self.learning_loop(self.planner,planner_type="astar")
         # astar for 0.4
         self.planner.astar_res = 0.5
-        results["astar_0.5"]= self.learning_loop(self.planner,planner_type="astar")
+        results["MMP_0.5"]= self.learning_loop(self.planner,planner_type="astar")
 
         self.planner.astar_res = 0.3
-        results["astar_0.3"]=  self.learning_loop(self.planner,planner_type="astar")
+        results["MMP_0.3"]=  self.learning_loop(self.planner,planner_type="astar")
 
         self.planner.astar_res = 0.2
-        results["astar_0.2"]=  self.learning_loop(self.planner,planner_type="astar")
+        results["MMP_0.2"]=  self.learning_loop(self.planner,planner_type="astar")
         #results = {"star_0.8":results_astar_08}
         fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
+
+
+
+    def time_margin_run(self,name):
+        # Pareto front run involves RRT at 2,5,8,10 seconds
+        results = {}
+        self.planner.planning_time = 5;self.planner.max_planning_time = 5
+ 
+        self.time_margin_factor=0.7
+        results["RLT-NC-TM"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        
+        self.time_margin_factor=1
+        self.cache_size = 1800
+        results["RLT-TM"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+
+        self.cache_size = 2300
+        self.time_margin_factor=1.
+        results["RLT-NC"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["RLT"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
 
     def single_run(self,name):

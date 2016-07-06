@@ -47,9 +47,9 @@
 	    <param name="max_planning_time" type="double" value="20"/>
 	    <param name="iterations" type="int" value="30"/>
 	    <param name="validation_proportion" type="double" value="0.8"/>	
-	    <param name="experiment_name" type="string" value="15_6_more_people"/>
+	    <param name="experiment_name" type="string" value="26_6_more_people"/>
 	    <param name="learning_rate" type="double" value="0.05"/>
-	    <param name="session_name" type="string" value="pareto_front_full"/>
+	    <param name="session_name" type="string" value="pareto_front_same_features"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="astar"/>
 	    <param name="cost_featureset" type="string" value="icra3"/>

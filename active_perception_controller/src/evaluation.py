@@ -42,9 +42,9 @@ from mmp import experiment_load2
 
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "15_6_more_people")
-        self.session_name = rospy.get_param("~session_name", "pareto_front_full")
-        self.no_of_runs = rospy.get_param( "number_of_runs",5)
+        self.exp_name = rospy.get_param("~experiment_name", "26_6_more_people")
+        self.session_name = rospy.get_param("~session_name", "pareto_front_same_features")
+        self.no_of_runs = rospy.get_param( "number_of_runs",2)
         self.filepath = os.path.dirname(os.path.abspath(__file__))
         self.directory = self.filepath+"/"+self.exp_name
         # RESULTS IS A DICT OF:
@@ -58,20 +58,34 @@ class Evaluator(object):
         print "gothere"
         for i in range(self.no_of_runs):
             self.results.append(fn.pickle_loader(self.results_dir+"results_"+str(i+1)+".pkl"))
-        self.results = self.results[:3]
-        self.no_of_runs=2
+            if i ==0:
+                ar = {}
+                ar["RLT-NC_2"] = self.results[i]["rrt_2"]
+                ar["RLT_2"] = self.results[i]["crrt_2"]
+                ar["RLT-NC_5"] = self.results[i]["rrt_5"]
+                ar["RLT_5"] = self.results[i]["crrt_5"]
+                ar["RLT-NC_8"] = self.results[i]["rrt_8"]
+                ar["RLT_8"] = self.results[i]["crrt_8"]
+                ar["RLT-NC_10"] = self.results[i]["rrt_10"]
+                ar["RLT_10"] = self.results[i]["crrt_10"]
+                ar["MMP_0.8"] = self.results[i]["astar_0.8"]
+                ar["MMP_0.5"] = self.results[i]["astar_0.5"]       
+                ar["MMP_0.3"] = self.results[i]["astar_0.3"]
+                ar["MMP_0.2"] = self.results[i]["astar_0.2"]
+                self.results[i]=ar
+
         self.plots()
-        # self.planner = MotionPlanner()
-        # self.costlib = self.planner.cost_manager
-        # self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
-        # self.expert_path_pub = rospy.Publisher("expert_path",Path,queue_size = 1)
-        # self.initial_paths_pub = rospy.Publisher("initial_weights_path",Path,queue_size = 1)
-        # self.final_paths_pub = rospy.Publisher("final_weights_path",Path,queue_size = 1)
-        # self.point_sub = rospy.Subscriber("clicked_point",PointStamped,self.point_cb)
-        # self.astar_03_path_pub = rospy.Publisher("astar03_path",Path,queue_size = 1)
-        # self.astar_08_path_pub = rospy.Publisher("astar08_path",Path,queue_size = 1)
-        # self.crlt_path_pub = rospy.Publisher("crlt_path",Path,queue_size = 1)
-        # self.visualization_counter = 0
+        self.planner = MotionPlanner()
+        self.costlib = self.planner.cost_manager
+        self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
+        self.expert_path_pub = rospy.Publisher("expert_path",Path,queue_size = 1)
+        self.initial_paths_pub = rospy.Publisher("initial_weights_path",Path,queue_size = 1)
+        self.final_paths_pub = rospy.Publisher("final_weights_path",Path,queue_size = 1)
+        self.point_sub = rospy.Subscriber("clicked_point",PointStamped,self.point_cb)
+        self.astar_03_path_pub = rospy.Publisher("astar03_path",Path,queue_size = 1)
+        self.astar_08_path_pub = rospy.Publisher("astar08_path",Path,queue_size = 1)
+        self.crlt_path_pub = rospy.Publisher("crlt_path",Path,queue_size = 1)
+        self.visualization_counter = 0
 
     def get_multiple_runs(self,method):
         time_taken = []
@@ -95,8 +109,9 @@ class Evaluator(object):
 
     def plots(self):
         results_for_plots = []
-
-        for method in self.results[1].keys():
+        for r in self.results:
+            print r.keys()
+        for method in self.results[0].keys():
             results_for_plots.append(self.get_multiple_runs(method))
 
 
@@ -123,26 +138,40 @@ class Evaluator(object):
 
         f = plt.figure()
         ax = f.add_subplot(111)
+        plt.ylim([0,4200])
         for n,method in enumerate(self.results[0].keys()):
+            if method[:4] == "RLT_":
+                col = "r"
+            elif method[:4] == "RLT-":
+                col = "b"
+            else:
+                col = "g"
             if method !="p":
                 res = results_for_plots[n]
                 print res
-                plt.errorbar(res[0][-1],res[-2],label = method,fmt="o",xerr = res[1][-1])
+                plt.errorbar(res[0][-1],res[-2],label = method,fmt="o",c = col,xerr = res[1][-1])
                 plt.annotate(method,xy=(res[0][-1]+0.1,res[-2]+0.1))
         #plt.legend(bbox_to_anchor=(1., 1,0.,-0.06),loc=1)
-        ax.set_ylabel("Time Taken",fontweight = 'bold',fontsize = 14)
+        ax.set_ylabel("Time Taken (seconds)",fontweight = 'bold',fontsize = 14)
         ax.set_xlabel("Average Cost Difference",fontweight='bold',fontsize = 14)
         f.savefig(self.results_dir+"/pareto_front.png")
 
         f = plt.figure()
         ax = f.add_subplot(111)
+        plt.ylim([0,4200])
         for n,method in enumerate(self.results[0].keys()):
+            if method[:4] == "RLT_":
+                col = "r"
+            elif method[:4] == "RLT-":
+                col = "b"
+            else:
+                col = "g"
             if method !="p":
                 res = results_for_plots[n]
-                plt.errorbar(res[2][-1],res[-2],label = method,fmt="o",xerr = res[3][-1])
+                plt.errorbar(res[2][-1],res[-2],label = method,fmt="o",c = col,xerr = res[3][-1])
                 plt.annotate(method,xy=(res[2][-1]+0.1,res[-2]+0.1))
         #plt.legend(bbox_to_anchor=(1., 1,0.,-0.06),loc=1)
-        ax.set_ylabel("Time Taken",fontweight = 'bold',fontsize = 14)
+        ax.set_ylabel("Time Taken (seconds)",fontweight = 'bold',fontsize = 14)
         ax.set_xlabel("Average Cost Difference",fontweight='bold',fontsize = 14)
         f.savefig(self.results_dir+"/pareto_front_val.png")
 
@@ -181,14 +210,14 @@ class Evaluator(object):
             i.header.frame_id = "map"
             i.header.stamp = rospy.get_rostime()
 
-        self.costlib.weights = self.results[0]["cached_rrt"]["weights_final"]
+        self.costlib.weights = self.results[0]["RLT_10"]["weights_final"]
         #self.costlib.weights = self.gt_weights
         self.expert_path_pub.publish(path_to_pose(current_datapoint.path_array))
         # Plan using initial weights
-        self.initial_paths_pub.publish(path_to_pose(self.results[0]["cached_rrt"]["initial_paths"][self.visualization_counter]))
-        self.crlt_path_pub.publish(path_to_pose(self.results[0]["cached_rrt"]["final_paths"][self.visualization_counter]))
-        self.astar_08_path_pub.publish(path_to_pose(self.results[0]["astar_0.8"]["final_paths"][self.visualization_counter]))
-        self.astar_03_path_pub.publish(path_to_pose(self.results[0]["astar_0.3"]["final_paths"][self.visualization_counter]))
+        self.initial_paths_pub.publish(path_to_pose(self.results[0]["RLT_10"]["initial_paths"][self.visualization_counter]))
+        self.crlt_path_pub.publish(path_to_pose(self.results[0]["RLT_10"]["final_paths"][self.visualization_counter]))
+        self.astar_08_path_pub.publish(path_to_pose(self.results[0]["MMP_0.8"]["final_paths"][self.visualization_counter]))
+        self.astar_03_path_pub.publish(path_to_pose(self.results[0]["MMP_0.3"]["final_paths"][self.visualization_counter]))
         if self.visualization_counter<len(self.experiment_data)-2:
             self.visualization_counter +=1
         else:

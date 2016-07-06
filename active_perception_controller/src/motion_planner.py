@@ -102,7 +102,7 @@ class MotionPlanner():
         self._robot_radius_px = robot_radius / self._navmap.info.resolution
         sigma_person = rospy.get_param("sigma_person", 0.05)
         self.astar_res = rospy.get_param("~astar_res", 0.5)
-        self.planning_featureset = rospy.get_param("~cost_featureset", "icra1")
+        self.planning_featureset = rospy.get_param("~cost_featureset", "icra3")
 
         print "PLANNING TIME",self.planning_time
         self._planned = False # This is just for testing purposes. Delete me!
