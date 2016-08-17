@@ -38,59 +38,7 @@ from motion_planner import MotionPlanner
 import helper_functions as fn
 from active_perception_controller.msg import Person,PersonArray
 from random import shuffle
-
-class example(object):
-    def __init__(self):
-        self.path = Path()
-        self.people = []
-        self.goal =None
-        self.path_array = []
-        self.goal_xy = None
-        self.nbrs = NearestNeighbors(n_neighbors=1,algorithm="kd_tree",leaf_size = 30)
-
-def experiment_load(directory):
-    experiment = []
-    for subdir,dirs, files in os.walk(directory+'/traj_data/'):
-        for file in files:
-            print "FILE",file
-            bag = rosbag.Bag(directory+'/traj_data/'+file)
-            ex = example()
-            for topic, msg, t in bag.read_messages():
-                if topic == "robot":
-                    ex.path.poses.append(msg)
-                    ex.path_array.append(np.array([msg.pose.position.x,msg.pose.position.y]))
-                elif topic=="people":
-                    ex.people.append(msg)
-                elif topic == "goal":
-                    ex.goal = msg
-                    print msg
-                    ex.goal_xy = np.array([msg.pose.position.x,msg.pose.position.y])
-            bag.close()
-            ex.nbrs.fit(ex.path_array)
-            experiment.append(deepcopy(ex))
-    return experiment
-
-def experiment_load2(directory):
-    experiment = []
-    for subdir,dirs, files in os.walk(directory+'/traj_data/'):
-        for file in files:
-            print "FILE",file
-            bag = rosbag.Bag(directory+'/traj_data/'+file)
-            ex = example()
-            for topic, msg, t in bag.read_messages():
-                if topic == "path":
-                    ex.path = msg
-                    for i in msg.poses:
-                        ex.path_array.append(np.array([i.pose.position.x,i.pose.position.y]))
-                elif topic=="people":
-                    ex.people=msg
-                elif topic == "goal":
-                    ex.goal = msg
-                    ex.goal_xy = np.array([msg.pose.position.x,msg.pose.position.y])
-            bag.close()
-            ex.nbrs.fit(ex.path_array)
-            experiment.append(deepcopy(ex))
-    return experiment
+from experiment_loading import example,experiment_load2,experiment_load_sevilla
 
 
 class Learner(object):
@@ -98,17 +46,16 @@ class Learner(object):
         self.iterations = rospy.get_param("~iterations", 10)
         self.learning_rate = rospy.get_param("~learning_rate", 0.5)
         self.time_margin_factor = rospy.get_param("~time_margin_factor", 1.0)
-
         self.cache_size = rospy.get_param("~point_cache_size", 2500)
         self.momentum = 0.2
-        self.exp_name = rospy.get_param("~experiment_name", "workshop_data3")
-        self.session_name = rospy.get_param("~session_name", "rrt_max_margin")
+        self.exp_name = rospy.get_param("~experiment_name", "sevilla_test")
+        self.session_name = rospy.get_param("~session_name", "sevilla_learn1")
+        self.baseline_eval = rospy.get_param("~baseline", False)
         self.path = os.path.dirname(os.path.abspath(__file__))
         self.directory = self.path+"/"+self.exp_name
         self.results_dir = self.path+"/results/"+self.session_name+"/"
         fn.make_dir(self.results_dir)
-        self.experiment_data = experiment_load2(self.directory)
-        #pdb.set_trace()
+        self.experiment_data = experiment_load_sevilla(self.directory)
         self.planner = MotionPlanner()
         self.validation_proportion = rospy.get_param("~validation_proportion", 0.8)
         #self.experiment_data = self.experiment_data[:10]
@@ -116,24 +63,27 @@ class Learner(object):
         #shuffle(self.experiment_data)
         self.costlib = self.planner.cost_manager
         self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
-        self.baseline_eval = False
+        
         #self.gt_weights = np.array([ 2. ,  0.5,  0. ,  0.3 ,  2. ,  0.5,  0.4 ])
         #fn.pickle_saver({"featureset":"icra2","weights":self.gt_weights},self.directory+"/weights.pkl")
-        loaded = fn.pickle_loader(self.directory+"/weights.pkl")
-        self.gt_weights = loaded["weights"]
-        self.gt_featureset = loaded["feature_set"]
-        if self.gt_weights!=None:
-            self.baseline_eval = True
+        if self.baseline_eval==True:
+            try:
+                loaded = fn.pickle_loader(self.directory+"/weights.pkl")
+                self.gt_weights = loaded["weights"]
+                self.gt_featureset = loaded["feature_set"]
+            except:
+                self.gt_weights=None
+                self.baseline_eval=False
 
         self.write_learning_params(self.results_dir)
-        shuffle(self.experiment_data)
-        self.pareto_run("2")
-        shuffle(self.experiment_data)
-        self.pareto_run("3")
-        shuffle(self.experiment_data)
-        self.pareto_run("4")
-        shuffle(self.experiment_data)
-        self.pareto_run("5")
+        #shuffle(self.experiment_data)
+        self.sevilla_test_run("1")
+        #shuffle(self.experiment_data)
+        #self.pareto_run("3")
+        #shuffle(self.experiment_data)
+        #self.pareto_run("4")
+        #shuffle(self.experiment_data)
+        #self.pareto_run("5")
 
     def write_learning_params(self,directory):
         f = open(directory+"readme","w")
@@ -143,6 +93,14 @@ class Learner(object):
         f.write("learning_rate:  "+ str(self.learning_rate) +"\n")
         f.write("validation_proportion:  "+ str(self.validation_proportion) +"\n")
         f.close()        
+
+    def sevilla_test_run(self,name):
+        results = {}
+        self.planner.planning_time = 5;self.planner.max_planning_time = 5
+        self.cache_size = 2500
+        results["RLT_NC_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
+        results["RLT_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
+        fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
 
     def pareto_run(self,name):
         # Pareto front run involves RRT at 2,5,8,10 seconds
@@ -233,6 +191,8 @@ class Learner(object):
             self.ppl_pub.publish(i.people)
             rospy.sleep(0.5)
             i.feature_sum = self.feature_sums(i.path_array,i.goal_xy)
+
+            print "FEATURE SUM", i.feature_sum
             all_feature_sums.append(i.feature_sum/len(i.path_array))
             if self.baseline_eval == True:
                 self.costlib.set_featureset(self.gt_featureset)
@@ -253,14 +213,19 @@ class Learner(object):
             self.costlib.weights = self.learner_weights
             self.initial_weights = np.copy(self.learner_weights)
             for n,i in enumerate(self.experiment_data):
+                print "DATA POINT",n
+                print "ITERATION",iteration
                 if n>=len(self.experiment_data)*(1-self.validation_proportion):
                     validating = True
                 else:
                     validating = False
                 print "CHANGING POSITION"
                 self.planner.publish_empty_path()
+                
                 config_change(i.path.poses[0],i.people)
-                rospy.sleep(0.5)
+                rospy.sleep(1.)
+                config_change(i.path.poses[0],i.people)
+                rospy.sleep(1.)
                 self.planner._goal = i.goal
 
                 if validating==False and planner_type=="cached_rrt" and iteration==0:
@@ -332,7 +297,7 @@ class Learner(object):
     def feature_sums(self,xy_path,goal_xy,interpolation=True):
         # calculates path feature sums.
         if interpolation==True:
-            xy_path = interpolate_path(xy_path,resolution=0.2)
+            xy_path = interpolate_path(xy_path,resolution=0.005)
         feature_sum = 0
         for i in range(len(xy_path)-1):
             if i ==0:

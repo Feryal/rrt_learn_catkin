@@ -38,28 +38,29 @@ from motion_planner import path_to_pose,MotionPlanner
 import helper_functions as fn
 from active_perception_controller.msg import Person,PersonArray
 from mmp import example
-from mmp import experiment_load2
+from experiment_loading import experiment_load2,experiment_load_sevilla
 
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "15_6_more_people")
-        self.session_name = rospy.get_param("~session_name", "pareto_front_full")
-        self.no_of_runs = rospy.get_param( "number_of_runs",5)
+        self.exp_name = rospy.get_param("~experiment_name", "posq_test")
+        self.session_name = rospy.get_param("~session_name", "posq_learn_test")
+        self.real_data = rospy.get_param("~real_data", True)
+        self.no_of_runs = rospy.get_param( "number_of_runs",2)
         self.filepath = os.path.dirname(os.path.abspath(__file__))
         self.directory = self.filepath+"/"+self.exp_name
         # RESULTS IS A DICT OF:
         # "similarity","cost_diff","weights final","weights initial"
         self.results_dir = self.filepath+"/results/"+self.session_name+"/"
-
+        #self.real_data_eval()
         self.experiment_data = experiment_load2(self.directory)
         self.gt_weights = fn.pickle_loader(self.directory+"/weights.pkl")
         self.results = [];
-        print self.results_dir
-        print "gothere"
+        # print self.results_dir
+        # print "gothere"
         for i in range(self.no_of_runs):
-            self.results.append(fn.pickle_loader(self.results_dir+"results_"+str(i+1)+".pkl"))
-        self.results = self.results[:3]
-        self.no_of_runs=2
+             self.results.append(fn.pickle_loader(self.results_dir+"results_"+str(i+1)+".pkl"))
+        # self.results = self.results[:3]
+        # self.no_of_runs=2
         self.plots()
         # self.planner = MotionPlanner()
         # self.costlib = self.planner.cost_manager
@@ -71,19 +72,34 @@ class Evaluator(object):
         # self.astar_03_path_pub = rospy.Publisher("astar03_path",Path,queue_size = 1)
         # self.astar_08_path_pub = rospy.Publisher("astar08_path",Path,queue_size = 1)
         # self.crlt_path_pub = rospy.Publisher("crlt_path",Path,queue_size = 1)
-        # self.visualization_counter = 0
+        self.visualization_counter = 0
+
+    def real_data_eval(self):
+        self.results = []
+        self.experiment_data = experiment_load_sevilla(self.directory)
+        for i in range(self.no_of_runs):
+             self.results.append(fn.pickle_loader(self.results_dir+"results_"+str(i+1)+".pkl"))
+        self.planner = MotionPlanner()
+        self.costlib = self.planner.cost_manager
+        self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 1)
+        self.expert_path_pub = rospy.Publisher("expert_path",Path,queue_size = 1)
+        self.initial_paths_pub = rospy.Publisher("initial_weights_path",Path,queue_size = 1)
+        self.final_paths_pub = rospy.Publisher("final_weights_path",Path,queue_size = 1)
+        self.point_sub = rospy.Subscriber("clicked_point",PointStamped,self.point_cb_real)
+        # self.crlt_path_pub = rospy.Publisher("crlt_path",Path,queue_size = 1)
 
     def get_multiple_runs(self,method):
         time_taken = []
-        print method
         for i in range(self.no_of_runs):
             time_taken.append(np.sum(self.results[i][method]["time_per_iter"]) + self.results[i][method]["time_to_cache"])
             train_size = np.array(self.results[i][method]["cost_diff"]).shape[1]*(1-self.results[i][method]["validation_proportion"])
             if i ==0:
                 cost_diff_val = np.mean(np.array(self.results[i][method]["cost_diff"])[:,train_size:],axis=1)
                 cost_diff_train = np.mean(np.array(self.results[i][method]["cost_diff"])[:,:train_size],axis=1)
-            cost_diff_val = np.vstack([cost_diff_val,np.mean(np.array(self.results[i][method]["cost_diff"])[:,train_size:],axis=1)])
-            cost_diff_train = np.vstack([cost_diff_train,np.mean(np.array(self.results[i][method]["cost_diff"])[:,:train_size],axis=1)])
+
+            else:
+                cost_diff_val = np.vstack([cost_diff_val,np.mean(np.array(self.results[i][method]["cost_diff"])[:,train_size:],axis=1)])
+                cost_diff_train = np.vstack([cost_diff_train,np.mean(np.array(self.results[i][method]["cost_diff"])[:,:train_size],axis=1)])
         # return the mean and standard error across runs
         val_mean = np.mean(cost_diff_val,axis=0)
         val_std_err = np.std(cost_diff_val,axis=0)/np.sqrt(self.no_of_runs)
@@ -96,7 +112,7 @@ class Evaluator(object):
     def plots(self):
         results_for_plots = []
 
-        for method in self.results[1].keys():
+        for method in self.results[0].keys():
             results_for_plots.append(self.get_multiple_runs(method))
 
 
@@ -181,18 +197,41 @@ class Evaluator(object):
             i.header.frame_id = "map"
             i.header.stamp = rospy.get_rostime()
 
-        self.costlib.weights = self.results[0]["cached_rrt"]["weights_final"]
+        rn = 1
+        self.costlib.weights = self.results[0]["crrt_10"]["weights_final"]
         #self.costlib.weights = self.gt_weights
         self.expert_path_pub.publish(path_to_pose(current_datapoint.path_array))
         # Plan using initial weights
-        self.initial_paths_pub.publish(path_to_pose(self.results[0]["cached_rrt"]["initial_paths"][self.visualization_counter]))
-        self.crlt_path_pub.publish(path_to_pose(self.results[0]["cached_rrt"]["final_paths"][self.visualization_counter]))
-        self.astar_08_path_pub.publish(path_to_pose(self.results[0]["astar_0.8"]["final_paths"][self.visualization_counter]))
-        self.astar_03_path_pub.publish(path_to_pose(self.results[0]["astar_0.3"]["final_paths"][self.visualization_counter]))
+        self.initial_paths_pub.publish(path_to_pose(self.results[rn]["crrt_10"]["initial_paths"][self.visualization_counter]))
+        self.crlt_path_pub.publish(path_to_pose(self.results[rn]["crrt_10"]["final_paths"][self.visualization_counter]))
+        self.astar_08_path_pub.publish(path_to_pose(self.results[rn]["astar_0.8"]["final_paths"][self.visualization_counter]))
+        self.astar_03_path_pub.publish(path_to_pose(self.results[rn]["astar_0.3"]["final_paths"][self.visualization_counter]))
         if self.visualization_counter<len(self.experiment_data)-2:
             self.visualization_counter +=1
         else:
             self.visualization_counter=0
+
+    def point_cb_real(self,msg):
+        current_datapoint = self.experiment_data[self.visualization_counter]
+        self.ppl_pub.publish(current_datapoint.people)
+        self.config_change(current_datapoint.path.poses[0],current_datapoint.people)
+        # Publish expert datapoint
+        for i in current_datapoint.path.poses:
+            i.header.frame_id = "map"
+            i.header.stamp = rospy.get_rostime()
+        self.costlib.weights = self.results[0]["RLT_5"]["weights_final"]
+        self.planner._goal  = current_datapoint.goal
+        self.planner.update_costmap()
+        #self.costlib.weights = self.gt_weights
+        self.expert_path_pub.publish(path_to_pose(current_datapoint.path_array))
+        # Plan using initial weights
+        self.initial_paths_pub.publish(path_to_pose(self.results[0]["RLT_NC_5"]["initial_paths"][self.visualization_counter]))
+        self.final_paths_pub.publish(path_to_pose(self.results[0]["RLT_NC_5"]["final_paths"][self.visualization_counter]))
+        if self.visualization_counter<len(self.experiment_data)-2:
+            self.visualization_counter +=1
+        else:
+            self.visualization_counter=0
+
     def config_change(self,robotPose, personPoses):
         rospy.wait_for_service('change_robot_position')
         try:
