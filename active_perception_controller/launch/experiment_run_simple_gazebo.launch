@@ -42,11 +42,11 @@
 
 					 <!-- Experiment Runner -->
     <node pkg="active_perception_controller" type="experiment_runner_simple.py" name="experiment_runner" output="screen">
-	    <param name="datapoints_to_collect" type="int" value="10" />
-	    <param name="experiment_name" type="string" value="posq_test_exp" />
-	    <param name="rrt_eta" type="double" value="1.5" />
-	    <param name="planning_time" type="double" value="500"/>
-	    <param name="max_planning_time" type="double" value="600"/>
+	    <param name="datapoints_to_collect" type="int" value="20" />
+	    <param name="experiment_name" type="string" value="30_people_5_goals" />
+	    <param name="rrt_eta" type="double" value="0.4" />
+	    <param name="planning_time" type="double" value="100"/>
+	    <param name="max_planning_time" type="double" value="100"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="rrtstar"/>
 	    <param name="cost_featureset" type="string" value="icra3"/>

@@ -87,7 +87,6 @@ class Evaluator(object):
         self.final_paths_pub = rospy.Publisher("final_weights_path",Path,queue_size = 1)
         self.point_sub = rospy.Subscriber("clicked_point",PointStamped,self.point_cb_real)
         # self.crlt_path_pub = rospy.Publisher("crlt_path",Path,queue_size = 1)
-
     def get_multiple_runs(self,method):
         time_taken = []
         for i in range(self.no_of_runs):
@@ -111,7 +110,8 @@ class Evaluator(object):
 
     def plots(self):
         results_for_plots = []
-
+        for r in self.results:
+            print r.keys()
         for method in self.results[0].keys():
             results_for_plots.append(self.get_multiple_runs(method))
 
@@ -139,26 +139,40 @@ class Evaluator(object):
 
         f = plt.figure()
         ax = f.add_subplot(111)
+        plt.ylim([0,4200])
         for n,method in enumerate(self.results[0].keys()):
+            if method[:4] == "RLT_":
+                col = "r"
+            elif method[:4] == "RLT-":
+                col = "b"
+            else:
+                col = "g"
             if method !="p":
                 res = results_for_plots[n]
                 print res
-                plt.errorbar(res[0][-1],res[-2],label = method,fmt="o",xerr = res[1][-1])
+                plt.errorbar(res[0][-1],res[-2],label = method,fmt="o",c = col,xerr = res[1][-1])
                 plt.annotate(method,xy=(res[0][-1]+0.1,res[-2]+0.1))
         #plt.legend(bbox_to_anchor=(1., 1,0.,-0.06),loc=1)
-        ax.set_ylabel("Time Taken",fontweight = 'bold',fontsize = 14)
+        ax.set_ylabel("Time Taken (seconds)",fontweight = 'bold',fontsize = 14)
         ax.set_xlabel("Average Cost Difference",fontweight='bold',fontsize = 14)
         f.savefig(self.results_dir+"/pareto_front.png")
 
         f = plt.figure()
         ax = f.add_subplot(111)
+        plt.ylim([0,4200])
         for n,method in enumerate(self.results[0].keys()):
+            if method[:4] == "RLT_":
+                col = "r"
+            elif method[:4] == "RLT-":
+                col = "b"
+            else:
+                col = "g"
             if method !="p":
                 res = results_for_plots[n]
-                plt.errorbar(res[2][-1],res[-2],label = method,fmt="o",xerr = res[3][-1])
+                plt.errorbar(res[2][-1],res[-2],label = method,fmt="o",c = col,xerr = res[3][-1])
                 plt.annotate(method,xy=(res[2][-1]+0.1,res[-2]+0.1))
         #plt.legend(bbox_to_anchor=(1., 1,0.,-0.06),loc=1)
-        ax.set_ylabel("Time Taken",fontweight = 'bold',fontsize = 14)
+        ax.set_ylabel("Time Taken (seconds)",fontweight = 'bold',fontsize = 14)
         ax.set_xlabel("Average Cost Difference",fontweight='bold',fontsize = 14)
         f.savefig(self.results_dir+"/pareto_front_val.png")
 
@@ -197,15 +211,14 @@ class Evaluator(object):
             i.header.frame_id = "map"
             i.header.stamp = rospy.get_rostime()
 
-        rn = 1
-        self.costlib.weights = self.results[0]["crrt_10"]["weights_final"]
+        self.costlib.weights = self.results[0]["RLT_10"]["weights_final"]
         #self.costlib.weights = self.gt_weights
         self.expert_path_pub.publish(path_to_pose(current_datapoint.path_array))
         # Plan using initial weights
-        self.initial_paths_pub.publish(path_to_pose(self.results[rn]["crrt_10"]["initial_paths"][self.visualization_counter]))
-        self.crlt_path_pub.publish(path_to_pose(self.results[rn]["crrt_10"]["final_paths"][self.visualization_counter]))
-        self.astar_08_path_pub.publish(path_to_pose(self.results[rn]["astar_0.8"]["final_paths"][self.visualization_counter]))
-        self.astar_03_path_pub.publish(path_to_pose(self.results[rn]["astar_0.3"]["final_paths"][self.visualization_counter]))
+        self.initial_paths_pub.publish(path_to_pose(self.results[0]["RLT_10"]["initial_paths"][self.visualization_counter]))
+        self.crlt_path_pub.publish(path_to_pose(self.results[0]["RLT_10"]["final_paths"][self.visualization_counter]))
+        self.astar_08_path_pub.publish(path_to_pose(self.results[0]["MMP_0.8"]["final_paths"][self.visualization_counter]))
+        self.astar_03_path_pub.publish(path_to_pose(self.results[0]["MMP_0.3"]["final_paths"][self.visualization_counter]))
         if self.visualization_counter<len(self.experiment_data)-2:
             self.visualization_counter +=1
         else:

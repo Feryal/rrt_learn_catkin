@@ -46,9 +46,9 @@
 	    <param name="rrt_eta" type="double" value="1.1" />
 	    <param name="planning_time" type="double" value="12"/>
 	    <param name="max_planning_time" type="double" value="20"/>
-	    <param name ="number_of_runs" type="int" value="1" />
-	    <param name="experiment_name" type="string" value="posq_test_exp"/>
-	    <param name="session_name" type="string" value="posq_learn_test"/>
+	    <param name ="number_of_runs" type="int" value="2" />
+	    <param name="experiment_name" type="string" value="26_6_more_people"/>
+	    <param name="session_name" type="string" value="pareto_front_same_features"/>
     </node-->  		
 
 					<!--People to costmap -->

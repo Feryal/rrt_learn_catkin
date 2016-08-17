@@ -47,12 +47,13 @@
 	    <param name="max_planning_time" type="double" value="20"/>
 	    <param name="iterations" type="int" value="10"/>
 	    <param name="validation_proportion" type="double" value="0.2"/>	
-	    <param name="experiment_name" type="string" value="sevilla_test"/>
 	    <param name="learning_rate" type="double" value="0.6"/>
-	    <param name="session_name" type="string" value="sevilla_learn1"/>
+	    <param name="experiment_name" type="string" value="26_6_more_people"/>
+	    <param name="learning_rate" type="double" value="0.05"/>
+	    <param name="session_name" type="string" value="pareto_front_same_features"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="astar"/>
-	    <param name="baseline" type="boolean" value="False"/>
+	    <param name="baseline" type="boolean" value="True"/>
 	    <param name="cost_featureset" type="string" value="icra3"/>
     </node>  		
 
