@@ -102,7 +102,7 @@ class MotionPlanner():
         self._robot_radius_px = robot_radius / self._navmap.info.resolution
         sigma_person = rospy.get_param("sigma_person", 0.05)
         self.astar_res = rospy.get_param("~astar_res", 0.5)
-        self.planning_featureset = rospy.get_param("~cost_featureset", "icra1")
+        self.planning_featureset = rospy.get_param("~cost_featureset", "icra3")
 
         print "PLANNING TIME",self.planning_time
         self._planned = False # This is just for testing purposes. Delete me!
@@ -219,7 +219,7 @@ class MotionPlanner():
         self._lock.release()
         return pose_path,array_path
     
-    def make_cached_rrt(self,sample_fn,points_to_cache = 3500):
+    def make_cached_rrt(self,sample_fn,points_to_cache = 3500,bias=0.3):
         """
         RRT* Algorithm
         """
@@ -238,11 +238,8 @@ class MotionPlanner():
         edge_C = {}
         planning_time=self.planning_time
         nbrs = NearestNeighbors(n_neighbors=1,algorithm="kd_tree",leaf_size = 30)
-        #flann = FLANN()
         lowest_cost_idx = None
         nbrs.fit(V)
-        #params = flann.build_index(np.array(V))
-        #pdb.set_trace()
         t1 = time.time()
         planning_done = False
         rrt_iter = 0
@@ -294,7 +291,9 @@ class MotionPlanner():
                 print "time taken",time.time()-t1
         return sampled_points
 
-    def rrtstar(self, sample_fn):
+
+
+    def rrtstar(self, sample_fn,bias = 0.1):
         """
         RRT* Algorithm
         """
@@ -318,18 +317,14 @@ class MotionPlanner():
         edge_C = {}
         planning_time=self.planning_time
         nbrs = NearestNeighbors(n_neighbors=1,algorithm="kd_tree",leaf_size = 30)
-        #flann = FLANN()
         lowest_cost_idx = None
         nbrs.fit(V)
-        #params = flann.build_index(np.array(V))
-        #pdb.set_trace()
         t1 = time.time()
         sampling_informed = False
         planning_done = False
         rewire_counter = 0
         rewire_limit = 55500
         rrt_iter = 0
-        bias = 0.1
         importance_points=None
 
         while not planning_done:
@@ -484,8 +479,6 @@ class MotionPlanner():
         self._path_pub.publish(pt)
         print "LENGTH OF", len(C)
         return pt,path
-
-
 
     def plan_cached_rrt(self,cached_points):
         """
@@ -805,8 +798,6 @@ class MotionPlanner():
         else:
             return True
 
-
-    
     def distance_transform_search(self, org_idx, dst_idx):
         if self._distmap[dst_idx[1],dst_idx[0]] < self._robot_radius_px:
             return False
@@ -873,21 +864,6 @@ class MotionPlanner():
         p.header.frame_id = "map"
         p.poses.append(p1)
         self._rrt_pub.publish(p)
-
-# def interpolate_path(path,resolution=0.2):
-#     new_path = []
-#     for n,i in enumerate(path):
-#         diff = path[i+1] - path[i]
-#         ang = np.tan(diff[1],diff[0])
-#         ex = resolution*np.cos(ang)
-#         y = resolution*np.sin(ang)
-#         x_arr = np.arange()
-
-#         if i==0:
-
-
-
-
 
 def path_to_pose(path):
     pt = Path()
