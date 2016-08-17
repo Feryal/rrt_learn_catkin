@@ -37,8 +37,8 @@
     <node pkg="active_perception_controller" type="experiment_builder.py" name="experiment_builder" output="screen">
 	    <param name="number_of_goals" type="int" value="5" />
 	    <param name="number_of_people" type="int" value="30" />
-	    <param name="checkpoints_per_person" type="int" value="2" />
-	    <param name="experiment_name" type="string" value="30_people_5_goals" />
+	    <param name="checkpoints_per_person" type="int" value="3" />
+	    <param name="experiment_name" type="string" value="30_people_5_goals_same" />
     </node>  
 
 </launch>

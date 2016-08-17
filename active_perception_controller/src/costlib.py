@@ -44,9 +44,9 @@ class Cost_Manager(object):
 		self.weights[0] = 2.
 		self.weights[1] = 0.5
 		self.weights[2] = 0.
-		self.weights[3]=3.1
-		self.weights[4]=3.
-		self.weights[5]=0.9
+		self.weights[3]=2.5
+		self.weights[4]=5.1
+		self.weights[5]=1.2
 		self.weights[6]=1.
 		self.max_plan_dist = max_plan_dist
 		self.set_featureset(features)

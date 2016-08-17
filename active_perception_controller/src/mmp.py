@@ -126,24 +126,32 @@ class Learner(object):
             self.baseline_eval = True
 
         self.write_learning_params(self.results_dir)
+
         shuffle(self.experiment_data)
-        self.pareto_run("2")
-        #self.pareto_run("2")
-        #shuffle(self.experiment_data)
-        #self.pareto_run("3")
-        #shuffle(self.experiment_data)
-        #self.pareto_run("4")
-        #shuffle(self.experiment_data)
-        #self.pareto_run("5")
-        #self.time_margin_run("1")
-        #shuffle(self.experiment_data)
-        #self.time_margin_run("2")
-        #shuffle(self.experiment_data)
-        #self.time_margin_run("3")
-        #shuffle(self.experiment_data)
-        #self.time_margin_run("4")
-        #shuffle(self.experiment_data)
-        #self.time_margin_run("5")
+        self.pareto_run("10")
+        shuffle(self.experiment_data)
+        self.pareto_run("11")
+        shuffle(self.experiment_data)
+        self.pareto_run("12")
+        shuffle(self.experiment_data)
+        self.pareto_run("13")
+        shuffle(self.experiment_data)
+        self.pareto_run("14")
+        shuffle(self.experiment_data)
+        self.pareto_run("15")
+        shuffle(self.experiment_data)
+        self.pareto_run("16")
+        shuffle(self.experiment_data)
+        self.pareto_run("17")
+        self.time_margin_run("tm_11")
+        shuffle(self.experiment_data)
+        self.time_margin_run("tm_22")
+        shuffle(self.experiment_data)
+        self.time_margin_run("tm_33")
+        shuffle(self.experiment_data)
+        self.time_margin_run("tm_44")
+        shuffle(self.experiment_data)
+        self.time_margin_run("tm_55")
     def write_learning_params(self,directory):
         f = open(directory+"readme","w")
         f.write("Learning parameters used: \n------ \n \n")
@@ -156,22 +164,22 @@ class Learner(object):
     def pareto_run(self,name):
         # Pareto front run involves RRT at 2,5,8,10 seconds
         results = {}
-        self.planner.planning_time = 2;self.planner.max_planning_time = 2
-        self.cache_size = 1400
+        self.planner.planning_time = 2;self.planner.max_planning_time = 3
+        self.cache_size = 1300
         results["RLT-NC_2"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["RLT_2"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
-        self.planner.planning_time = 5;self.planner.max_planning_time = 5
+        self.planner.planning_time = 5;self.planner.max_planning_time = 6
         self.cache_size = 2300
         results["RLT-NC_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["RLT_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
-        self.planner.planning_time = 8;self.planner.max_planning_time = 8
+        self.planner.planning_time = 8;self.planner.max_planning_time = 9
         self.cache_size = 2900
         results["RLT-NC_8"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["RLT_8"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
 
-        self.planner.planning_time = 10;self.planner.max_planning_time = 10
+        self.planner.planning_time = 10;self.planner.max_planning_time = 11
         self.cache_size = 3300
         results["RLT-NC_10"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["RLT_10"]= self.learning_loop(self.planner,planner_type="cached_rrt")      

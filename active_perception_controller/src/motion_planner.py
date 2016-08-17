@@ -246,7 +246,7 @@ class MotionPlanner():
         t1 = time.time()
         planning_done = False
         rrt_iter = 0
-        bias = 0.05
+        bias = 0.1
         while not planning_done:
             cached_nbrs ={}
             t2 = time.time()
@@ -449,13 +449,7 @@ class MotionPlanner():
                     print "rewire_counter_reset"
                 #flann.build_index(np.array(V))
             rrt_iter +=1
-
-            if time.time()-t1>self.max_planning_time:
-                dist,point = nbrs.kneighbors(goal_xy)
-                points_near_goal=point[0]
-                planning_done=True
-                print "Could not find solution for 10 seconds, going with solution closest to goal."
-            elif time.time()-t1>planning_time:
+            if time.time()-t1>planning_time:
                 dist,points_near_goal = nbrs.radius_neighbors(goal_xy, self.goal_tolerance, return_distance = True)
                 points_near_goal = points_near_goal[0]
                 if len(points_near_goal)==0:
@@ -463,6 +457,12 @@ class MotionPlanner():
                     planning_time+=0.3
                 else:
                     planning_done = True
+            if time.time()-t1>self.max_planning_time and planning_done!=True:
+                dist,point = nbrs.kneighbors(goal_xy)
+                points_near_goal=point[0]
+                planning_done=True
+                print "Could not find solution for 10 seconds, going with solution closest to goal."
+
 
         #self.samp_point_pub.publish(marker_points)
         """

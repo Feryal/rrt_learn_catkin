@@ -27,9 +27,9 @@
   <remap from="/teresa_robot/head_position_controller/command" to="head_tilt"/>
   <remap from="/teresa_robot/stalk_position_controller/command" to="stalk_position"/>
   <!-- load the controllers -->
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/teresa_robot" args="head_position_controller stalk_position_controller joint_state_controller"
+  <!--node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/teresa_robot" args="head_position_controller stalk_position_controller joint_state_controller"
 >    
-  </node>
+  </node-->
 
   <!-- convert joint states to TF transforms for rviz, etc -->
   <group ns="teresa_robot">

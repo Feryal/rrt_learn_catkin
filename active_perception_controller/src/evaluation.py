@@ -42,9 +42,9 @@ from mmp import experiment_load2
 
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "26_6_more_people")
-        self.session_name = rospy.get_param("~session_name", "pareto_front_same_features")
-        self.no_of_runs = rospy.get_param( "number_of_runs",2)
+        self.exp_name = rospy.get_param("~experiment_name", "30_people_5_goals_same")
+        self.session_name = rospy.get_param("~session_name", "pareto_front_full_12_8_same")
+        self.no_of_runs = rospy.get_param( "number_of_runs",3)
         self.filepath = os.path.dirname(os.path.abspath(__file__))
         self.directory = self.filepath+"/"+self.exp_name
         # RESULTS IS A DICT OF:
@@ -58,7 +58,7 @@ class Evaluator(object):
         print "gothere"
         for i in range(self.no_of_runs):
             self.results.append(fn.pickle_loader(self.results_dir+"results_"+str(i+1)+".pkl"))
-            if i ==0:
+            if False:
                 ar = {}
                 ar["RLT-NC_2"] = self.results[i]["rrt_2"]
                 ar["RLT_2"] = self.results[i]["crrt_2"]
@@ -138,7 +138,6 @@ class Evaluator(object):
 
         f = plt.figure()
         ax = f.add_subplot(111)
-        plt.ylim([0,4200])
         for n,method in enumerate(self.results[0].keys()):
             if method[:4] == "RLT_":
                 col = "r"
@@ -158,7 +157,6 @@ class Evaluator(object):
 
         f = plt.figure()
         ax = f.add_subplot(111)
-        plt.ylim([0,4200])
         for n,method in enumerate(self.results[0].keys()):
             if method[:4] == "RLT_":
                 col = "r"
