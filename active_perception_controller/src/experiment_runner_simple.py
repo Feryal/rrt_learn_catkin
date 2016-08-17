@@ -24,7 +24,7 @@ from people_publisher import People_Publisher
 from std_msgs.msg import Float32MultiArray
 import rosbag
 import os
-from motion_planner import MotionPlanner
+from motion_planner_posq import MotionPlanner
 from mmp import config_change
 
 

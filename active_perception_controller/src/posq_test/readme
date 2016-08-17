@@ -1,0 +1,7 @@
+Planner parameters used: 
+------ 
+ 
+Planner type:  rrtstar
+RRT* planning time:  1000.0
+RRT eta:  0.8
+Featureset:icra3

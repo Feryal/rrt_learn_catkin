@@ -36,10 +36,8 @@
         <remap from="map" to="/map"/>
     </node>
     					     <!-- RRT -->
-    <!--node pkg="active_perception_controller" type="motion_planner.py" name="entropy_motion_planner" output="screen">	
+    <!--node pkg="active_perception_controller" type="motion_planner_posq.py" name="entropy_motion_planner" output="screen">	
 	    <param name="rrt_eta" type="double" value="1.2" />
-	    <param name="planning_time" type="double" value="20"/>
-	    <param name="max_planning_time" type="double" value="20"/>
     </node-->  
 
 					 <!-- Experiment Runner -->

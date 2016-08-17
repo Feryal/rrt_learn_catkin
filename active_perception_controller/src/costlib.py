@@ -41,13 +41,20 @@ class Cost_Manager(object):
 		# self.weights[-3]=7
 		# self.weights[-4]=2
 		self.weights = np.ones(7)
-		self.weights[0] = 2.
-		self.weights[1] = 0.5
+		self.weights[0] = 0.1
+		self.weights[1] = 0.1
 		self.weights[2] = 0.
+<<<<<<< HEAD
 		self.weights[3]=2.5
 		self.weights[4]=5.1
 		self.weights[5]=1.2
 		self.weights[6]=1.
+=======
+		self.weights[3]=14.
+		self.weights[4]=16.3
+		self.weights[5]=8.3
+		self.weights[6]=0.4
+>>>>>>> af9cfe27f91dbf795692c22a531ebda85319ac68
 		self.max_plan_dist = max_plan_dist
 		self.set_featureset(features)
 		self.people_sub = rospy.Subscriber("person_poses",
@@ -68,8 +75,12 @@ class Cost_Manager(object):
 			self.simple_ppl_poses.append(np.array([i.pose.position.x,i.pose.position.y,ang]))
 		self.simple_ppl_poses = np.array(self.simple_ppl_poses)
 	def obstacle_dist(self,robot_xy):
-		dt_idx =  idx = np.array([int((robot_xy[0] - self.origin[0])/self.res),int((-robot_xy[1] + self.origin[1])/self.res)])
-		return self.distance_transform[dt_idx[1],dt_idx[0]]*self.res
+		dt_idx  = np.array([int((robot_xy[0] - self.origin[0])/self.res),int((-robot_xy[1] + self.origin[1])/self.res)])
+		try:
+			out = self.distance_transform[dt_idx[1],dt_idx[0]]*self.res
+		except IndexError:
+			pdb.set_trace()
+		return out
 	def goal_cost(self,robot_xy,goal_xy):
 		return np.exp(np.linalg.norm(robot_xy- goal_xy))
 	def icra_featureset_1(self,robot_xy,goal_xy):
@@ -166,10 +177,42 @@ class Cost_Manager(object):
 	def edge_feature(self,f1,f2,xy_1,xy_2):
 	    d = np.linalg.norm(xy_1-xy_2)
 	    return 0.5*(f1+f2)*d
-
+	def path_cost(self,path,goal_xy):
+		# gives total cost of a set of points(path). Prototyped version. TODO implement something faster.
+		cost = 0
+		for n in xrange(1,path.shape[0]):
+			if n ==1:
+				x1 = path[n-1]
+				c1 = self.get_cost(x1[:2],goal_xy)
+				x2 = path[n]
+				c2 = self.get_cost(x2[:2],goal_xy)
+			else:
+				x1 = x2
+				c1 = c2
+				x2 = path[n]
+				c2 = self.get_cost(x2[:2],goal_xy)
+			d = np.linalg.norm(x1-x2)
+			cost+=0.5*(c1+c2)*d
+		return cost
+def path_cost_test(path,goal_xy):
+	# gives total cost of a set of points(path). Prototyped version. TODO implement something faster.
+	cost = 0
+	for n in xrange(1,path.shape[0]):
+		if n ==1:
+			x1 = path[n-1]
+			c1 = np.linalg.norm(x1[:2]-goal_xy)
+			x2 = path[n]
+			c2 = np.linalg.norm(x2[:2]-goal_xy)
+		else:
+			x1 = x2
+			c1 = c2
+			x2 = path[n]
+			c2 = np.linalg.norm(x2[:2]-goal_xy)
+		d = np.linalg.norm(x1-x2)
+		cost+=0.5*(c1+c2)*d
+	return cost
 def to_person_frame(robotPose,personPoses):
 	vec = -personPoses[:,:2] + robotPose
-
 	length = np.linalg.norm(vec,axis=1) 
 	phi = np.arctan2(vec[:,1],vec[:,0])
 	psi = phi - personPoses[:,2]
@@ -185,20 +228,12 @@ def safe_log(x):
 	return np.log(1+x)
 
 if __name__=='__main__':
-	# test_persons = np.array([[1,2,np.pi],[4,5,np.pi/2]])
-	# robot = np.array([0,0])
-	# out = to_person_frame(robot,test_persons)
+	test_persons = np.array([[1,2,np.pi],[4,5,np.pi/2]])
+	#self.simple_ppl_poses = test_persons
+	robot = np.array([[0,0],[0,0.5],[0.5,0.5]])
+	goal_xy = np.array([20,20])
+	cost = path_cost_test(robot,goal_xy)
+	pdb.set_trace()
 	# ou = gaussian_feature(out)
 	# print ou
-	angles = np.random.uniform(-np.pi,np.pi,1000)
-	tic = time.time()
-	for i in angles:
-		np.arctan2(i)
-	toc = time.time()
-	print "NUMPY",toc-tic
-	tic = time.time()
-	for i in angles:
-		atan2(i)
-	toc = time.time()
-	print "PYTHON",toc-tic
 
