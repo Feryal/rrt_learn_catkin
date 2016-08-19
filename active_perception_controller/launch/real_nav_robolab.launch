@@ -1,7 +1,5 @@
 <launch> 
-					<!-- STAGE-->
-    <include file="$(find stage_simulation)/launch/stage_robotlab.launch"/>
-
+				         <!-- Map Servers -->
     <node name="map_server_loc" pkg="map_server" type="map_server" args="$(find stage_simulation)/config/robotlab_map.yaml">
         <param name="frame_id" value="/map" />
     </node>
@@ -44,7 +42,7 @@
 	    <param name="rrt_eta" type="double" value="0.5" />
 	    <param name="planning_time" type="double" value="5"/>
 	    <param name="max_planning_time" type="double" value="20"/>
-	    <remap from="static_map" to="static_map_nav"/>
+            <remap from="static_map" to="static_map_nav"/>
     </node>  
     
 

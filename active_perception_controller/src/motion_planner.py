@@ -75,15 +75,18 @@ class MotionPlanner():
         getmap = rospy.ServiceProxy('static_map', GetMap)
         
         srv_available = False
+        rospy.sleep(0.4)
         while not srv_available:
             try:
                 rospy.wait_for_service('static_map',2.0)
                 srv_available = True
             except rospy.exceptions.ROSException as e:
                 rospy.logwarn(e.message)
-        
-        self._goal = None
+
         self._navmap = getmap().map
+        self._goal = None
+        maps_separate = False
+
         width = self._navmap.info.width
         height = self._navmap.info.height
         self.origin = np.array([self._navmap.info.origin.position.x,self._navmap.info.origin.position.y])
