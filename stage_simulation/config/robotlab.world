@@ -80,7 +80,7 @@ floorplan
 ( 
   name "robotlab"
   bitmap "../maps/robotlab_map.bmp"
-  size [10 10 1.000]
+  size [19.20 19.20 1.000]
   #pose [-16.8542 -16.8542 0 0.000 ]
 )
 
