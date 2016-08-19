@@ -1,0 +1,49 @@
+<launch> 
+				         <!-- Map Servers -->
+    <node name="map_server_loc" pkg="map_server" type="map_server" args="$(find stage_simulation)/config/robotlab_map.yaml">
+        <param name="frame_id" value="/map" />
+    </node>
+
+    <node name="map_server_nav" pkg="map_server" type="map_server" args="$(find stage_simulation)/config/robotlab_nav.yaml">
+        <param name="frame_id" value="/map_nav" />
+        <remap from="map" to="map_nav"/>
+        <remap from="map_metadata" to="map_nav_metadata"/>
+       <remap from="static_map" to="static_map_nav"/>
+    </node>
+
+  <node pkg="laser_assembler" type="laser_assembler" name="laser_assembler" args="/scanback /scanfront">
+  </node>
+
+<!--include file="$(find active_perception_controller)/launch/laser_assemble.launch" /-->
+					<!-- AMCL-->
+    <include file="$(find rrt_learn_gazebo)/launch/amcl.launch" />
+
+					<!-- RVIZ-->
+<node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/>
+
+					<!-- MOVE BASE-->
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+        <rosparam file="$(find rrt_learn_gazebo)/cfg/costmap_common_params.yaml" command="load" ns="global_costmap" />
+        <rosparam file="$(find rrt_learn_gazebo)/cfg/costmap_common_params.yaml" command="load" ns="local_costmap" />
+        <rosparam file="$(find rrt_learn_gazebo)/cfg/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find rrt_learn_gazebo)/cfg/global_costmap_params.yaml" command="load" />
+        <rosparam file="$(find rrt_learn_gazebo)/cfg/base_local_planner_params_teb.yaml" command="load" />
+        <param name="base_global_planner" type="string" value="active_perception_interface/ActivePerceptionInterface" />
+    <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
+    <param name="controller_frequency" value="10.0" />
+        <rosparam param="recovery_behaviors">[{name: conservative_reset, type: clear_costmap_recovery/ClearCostmapRecovery},
+                                              {name: aggressive_reset, type: clear_costmap_recovery/ClearCostmapRecovery}]</rosparam>
+        <param name="planner_patience" type="double" value="30.0"/>
+        <param name="controller_patience" type="double" value="60.0"/>
+        <remap from="map" to="/map_nav"/>
+    </node>
+    					     <!-- RRT -->
+    <node pkg="active_perception_controller" type="motion_planner.py" name="entropy_motion_planner" output="screen">
+	    <param name="rrt_eta" type="double" value="0.5" />
+	    <param name="planning_time" type="double" value="5"/>
+	    <param name="max_planning_time" type="double" value="20"/>
+            <remap from="static_map" to="static_map_nav"/>
+    </node>  
+    
+
+</launch>
