@@ -44,10 +44,10 @@ class Cost_Manager(object):
 		self.weights[0] = 1.1
 		self.weights[1] = 1.1
 		self.weights[2] = 0.
-		self.weights[3]=5.
-		self.weights[4]=16.3
-		self.weights[5]=3.3
-		self.weights[6]=0.4
+		self.weights[3]=2.5
+		self.weights[4]=5.1
+		self.weights[5]=1.2
+		self.weights[6]=1.
 		self.max_plan_dist = max_plan_dist
 		self.set_featureset(features)
 		self.people_sub = rospy.Subscriber("person_poses",

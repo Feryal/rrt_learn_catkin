@@ -1,9 +1,15 @@
 <launch>
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find stage_simulation)/config/map_8thfloor.yaml">
+    <node name="map_server_loc" pkg="map_server" type="map_server" args="$(find stage_simulation)/config/robotlab_map.yaml">
         <param name="frame_id" value="/map" />
     </node>
+    <node name="map_server_nav" pkg="map_server" type="map_server" args="$(find stage_simulation)/config/robotlab_nav.yaml">
+        <param name="frame_id" value="/map_nav" />
+        <remap from="map" to="map_nav"/>
+        <remap from="map_metadata" to="map_nav_metadata"/>
+    </node>
+
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find stage_simulation)/config/simulation.rviz"/>    
 
-    <include file="$(find stage_simulation)/launch/stage.launch"/>
+    <include file="$(find stage_simulation)/launch/stage_robotlab.launch"/>
     <include file="$(find stage_simulation)/launch/navigation_stage.launch"/>
 </launch>
