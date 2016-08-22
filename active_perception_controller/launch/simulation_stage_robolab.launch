@@ -25,6 +25,7 @@
 
 					<!-- MOVE BASE-->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+	<remap from="cmd_vel" to="cmd_vel_unfiltered"/>
         <rosparam file="$(find rrt_learn_gazebo)/cfg/costmap_common_params.yaml" command="load" ns="global_costmap" />
         <rosparam file="$(find rrt_learn_gazebo)/cfg/costmap_common_params.yaml" command="load" ns="local_costmap" />
         <rosparam file="$(find rrt_learn_gazebo)/cfg/local_costmap_params.yaml" command="load" />
