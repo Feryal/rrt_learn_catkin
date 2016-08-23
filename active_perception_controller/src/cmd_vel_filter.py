@@ -26,15 +26,19 @@ class Robot_Position_Manager(object):
         self.vw = np.zeros([1,2])
         self.history_size = 10
         self.w_queue = np.zeros(self.history_size)
+        self.v_queue = np.zeros(self.history_size)
         self.weights = np.linspace(0,1,self.history_size)/np.sum(np.linspace(0,1,self.history_size))
 
 
     def cb(self,msg):
-        msg.angular.z = msg.angular.z +  np.random.normal(scale = 0.2)
+        #msg.angular.z = msg.angular.z +  np.random.normal(scale = 0.2)
         self.w_queue =np.concatenate((self.w_queue[1:],np.array([msg.angular.z])))
+        self.v_queue =np.concatenate((self.v_queue[1:],np.array([msg.linear.x])))
         print "W before =",msg.angular.z
         w_new = np.sum(self.w_queue*self.weights)
+        v_new = np.sum(self.v_queue*self.weights)
         msg.angular.z = w_new
+        msg.linear.z = v_new
 
         print "W after =",msg.angular.z
 
