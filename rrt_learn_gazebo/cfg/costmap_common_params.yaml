@@ -8,7 +8,7 @@ map_type: costmap
 
 observation_sources: laser_scan_sensor people_topic
 
-laser_scan_sensor: {sensor_frame: base_link, data_type: LaserScan, topic: scan, marking: true, clearing: true, obstacle_range: 2.5, raytrace_range: 3.0, expected_update_rate: 0.2}
+laser_scan_sensor: {sensor_frame: base_link, data_type: LaserScan, topic: scan, marking: true, clearing: false, obstacle_range: 30., raytrace_range: 3.0, expected_update_rate: 0.2}
 
 people_topic: {sensor_frame: map, data_type: PointCloud, topic: person_point_cloud, marking: true, clearing: false,observation_persistence: 1.0,obstacle_range: 30}
 

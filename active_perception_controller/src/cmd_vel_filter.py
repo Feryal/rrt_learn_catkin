@@ -24,19 +24,28 @@ class Robot_Position_Manager(object):
         self._vel_sub = rospy.Subscriber('cmd_vel_unfiltered', Twist, self.cb)
         self._vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         self.vw = np.zeros([1,2])
-        self.history_size = 10
+        self.history_size = 2
         self.w_queue = np.zeros(self.history_size)
+	self.v_queue = np.zeros(self.history_size)
         self.weights = np.linspace(0,1,self.history_size)/np.sum(np.linspace(0,1,self.history_size))
 
 
     def cb(self,msg):
-        msg.angular.z = msg.angular.z +  np.random.normal(scale = 0.2)
+        #msg.angular.z = msg.angular.z +  np.random.normal(scale = 0.2)
         self.w_queue =np.concatenate((self.w_queue[1:],np.array([msg.angular.z])))
+	self.v_queue =np.concatenate((self.v_queue[1:],np.array([msg.linear.x])))
         print "W before =",msg.angular.z
         w_new = np.sum(self.w_queue*self.weights)
-        msg.angular.z = w_new
+	v_new = np.sum(self.v_queue*self.weights)
+	if np.abs(v_new) < 0.03:
+		v_new=0.
+        msg.angular.z =w_new
+	msg.linear.x = v_new
+	#msg.angular.z = 0.2
+	#msg.linear.x = 0.
 
         print "W after =",msg.angular.z
+	print "V adter=",msg.linear.x
 
         self._vel_pub.publish(msg)
         #self.update()
