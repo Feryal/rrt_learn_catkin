@@ -19,7 +19,7 @@
     <include file="$(find rrt_learn_gazebo)/launch/amcl.launch" />
 
 					<!-- RVIZ-->
-<node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/>
+<!--node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/-->
 
 					<!-- MOVE BASE-->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
@@ -36,7 +36,7 @@
         <param name="planner_patience" type="double" value="30.0"/>
         <param name="controller_patience" type="double" value="60.0"/>
         <remap from="map" to="/map_nav"/>
-	<remap from="cmd_vel" to="cmd_vel_unfiltered">
+	<remap from="cmd_vel" to="cmd_vel_unfiltered"/>
     </node>
     					     <!-- RRT -->
     <node pkg="active_perception_controller" type="motion_planner.py" name="entropy_motion_planner" output="screen">
