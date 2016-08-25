@@ -61,12 +61,15 @@ class Cost_Manager(object):
 
 	def ppl_cb(self,msg):
 		self.people_latest = msg
-		self.simple_ppl_poses = []
-		for i in self.people_latest.persons:
-			quat = [i.pose.orientation.x,i.pose.orientation.y,i.pose.orientation.z,i.pose.orientation.w]
-			ang = tf.transformations.euler_from_quaternion(quat)[2]
-			self.simple_ppl_poses.append(np.array([i.pose.position.x,i.pose.position.y,ang]))
-		self.simple_ppl_poses = np.array(self.simple_ppl_poses)
+		if len(self.people_latest.persons) ==0:
+			self.people_latest = None
+		else:
+			self.simple_ppl_poses = []
+			for i in self.people_latest.persons:
+				quat = [i.pose.orientation.x,i.pose.orientation.y,i.pose.orientation.z,i.pose.orientation.w]
+				ang = tf.transformations.euler_from_quaternion(quat)[2]
+				self.simple_ppl_poses.append(np.array([i.pose.position.x,i.pose.position.y,ang]))
+			self.simple_ppl_poses = np.array(self.simple_ppl_poses)
 	def obstacle_dist(self,robot_xy):
 		dt_idx  = np.array([int((robot_xy[0] - self.origin[0])/self.res),int((-robot_xy[1] + self.origin[1])/self.res)])
 		try:
@@ -184,7 +187,7 @@ class Cost_Manager(object):
 				c1 = c2
 				x2 = path[n]
 				c2 = self.get_cost(x2[:2],goal_xy)
-			d = np.linalg.norm(x1-x2)
+			d = np.linalg.norm(x1[:2]-x2[:2])
 			cost+=0.5*(c1+c2)*d
 		return cost
 def path_cost_test(path,goal_xy):
@@ -205,6 +208,7 @@ def path_cost_test(path,goal_xy):
 		cost+=0.5*(c1+c2)*d
 	return cost
 def to_person_frame(robotPose,personPoses):
+	print personPoses
 	vec = -personPoses[:,:2] + robotPose
 	length = np.linalg.norm(vec,axis=1) 
 	phi = np.arctan2(vec[:,1],vec[:,0])

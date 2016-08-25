@@ -48,5 +48,15 @@
 	    <remap from="static_map" to="static_map_nav"/>
     </node>  
     
+					<!--People to costmap -->
+    <node pkg="active_perception_controller" type="people_to_costmap.py" name="people_costmap" output="screen">
+    </node>  
+
+					<!--Mocap to People -->
+    <node pkg="active_perception_controller" type="mocap_2_costlib.py" name="mocap_people" output="screen">
+    </node>  
+
+<include file="$(find active_perception_controller)/launch/vrpn.launch"/>
+
 
 </launch>
