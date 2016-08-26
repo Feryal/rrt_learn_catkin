@@ -16,7 +16,7 @@ TebLocalPlannerROS:
  max_vel_x_backwards: 0.00
  max_vel_theta: 0.8
  acc_lim_x: 0.2
- acc_lim_theta: 0.1
+ acc_lim_theta: 0.3
     
  # GoalTolerance
     
@@ -42,7 +42,7 @@ TebLocalPlannerROS:
  optimization_verbose: False
  penalty_scale: 0.1
  penalty_epsilon: 0.0
- weight_max_vel_x: 5
+ weight_max_vel_x: 3
  weight_max_vel_theta: 2
  weight_acc_lim_x: 1
  weight_acc_lim_theta: 2
