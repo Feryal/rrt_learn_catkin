@@ -55,18 +55,22 @@ class Cost_Manager(object):
                                                       self.ppl_cb,
                                                 queue_size=1)
 		self.people_latest = None
+		self.simple_ppl_poses = None
 		self.origin = np.array([self.nav_map.info.origin.position.x,self.nav_map.info.origin.position.y])
 		self.res = self.nav_map.info.resolution
 		self.ref_path_nn =None
 
 	def ppl_cb(self,msg):
 		self.people_latest = msg
-		self.simple_ppl_poses = []
-		for i in self.people_latest.persons:
-			quat = [i.pose.orientation.x,i.pose.orientation.y,i.pose.orientation.z,i.pose.orientation.w]
-			ang = tf.transformations.euler_from_quaternion(quat)[2]
-			self.simple_ppl_poses.append(np.array([i.pose.position.x,i.pose.position.y,ang]))
-		self.simple_ppl_poses = np.array(self.simple_ppl_poses)
+		if len(self.people_latest.persons) ==0:
+			self.people_latest = None
+		else:
+			self.simple_ppl_poses = []
+			for i in self.people_latest.persons:
+				quat = [i.pose.orientation.x,i.pose.orientation.y,i.pose.orientation.z,i.pose.orientation.w]
+				ang = tf.transformations.euler_from_quaternion(quat)[2]
+				self.simple_ppl_poses.append(np.array([i.pose.position.x,i.pose.position.y,ang]))
+			self.simple_ppl_poses = np.array(self.simple_ppl_poses)
 	def obstacle_dist(self,robot_xy):
 		dt_idx  = np.array([int((robot_xy[0] - self.origin[0])/self.res),int((-robot_xy[1] + self.origin[1])/self.res)])
 		try:
@@ -82,7 +86,7 @@ class Cost_Manager(object):
 		goal_f2 = self.distance_dict["exponential"](goal_dst/7)
 		goal_f3 = self.distance_dict["log"](goal_dst)
 		ppl_f1 = 0;ppl_f2=0;ppl_f3=0
-		if self.people_latest!=None:
+		if self.people_latest!=None and self.simple_ppl_poses!=None:
 			dist =to_person_frame(robot_xy,self.simple_ppl_poses)
 			self.angled_step_feature(dist,0,0)
 			ppl_f1= self.gaussian_feature(dist,mean = self.mean1,cov = self.cov1)
@@ -184,7 +188,7 @@ class Cost_Manager(object):
 				c1 = c2
 				x2 = path[n]
 				c2 = self.get_cost(x2[:2],goal_xy)
-			d = np.linalg.norm(x1-x2)
+			d = np.linalg.norm(x1[:2]-x2[:2])
 			cost+=0.5*(c1+c2)*d
 		return cost
 def path_cost_test(path,goal_xy):

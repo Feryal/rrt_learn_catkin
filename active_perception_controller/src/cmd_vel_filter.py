@@ -33,7 +33,6 @@ class Robot_Position_Manager(object):
     def cb(self,msg):
         self.w_queue =np.concatenate((self.w_queue[1:],np.array([msg.angular.z])))
 	self.v_queue =np.concatenate((self.v_queue[1:],np.array([msg.linear.x])))
-        print "W before =",msg.angular.z
         w_new = np.sum(self.w_queue*self.weights)
 	v_new = np.sum(self.v_queue*self.weights)
 	if np.abs(v_new) < 0.03:

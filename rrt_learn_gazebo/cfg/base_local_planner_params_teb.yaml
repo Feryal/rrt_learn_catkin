@@ -55,7 +55,7 @@ TebLocalPlannerROS:
 
  # Parallel Planning in distinctive Topologies
 
- enable_homotopy_class_planning: True
+ enable_homotopy_class_planning: False
  enable_multithreading: True
  simple_exploration: False
  max_number_classes: 5
