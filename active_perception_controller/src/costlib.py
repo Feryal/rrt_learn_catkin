@@ -55,6 +55,7 @@ class Cost_Manager(object):
                                                       self.ppl_cb,
                                                 queue_size=1)
 		self.people_latest = None
+		self.simple_ppl_poses = None
 		self.origin = np.array([self.nav_map.info.origin.position.x,self.nav_map.info.origin.position.y])
 		self.res = self.nav_map.info.resolution
 		self.ref_path_nn =None
@@ -85,7 +86,7 @@ class Cost_Manager(object):
 		goal_f2 = self.distance_dict["exponential"](goal_dst/7)
 		goal_f3 = self.distance_dict["log"](goal_dst)
 		ppl_f1 = 0;ppl_f2=0;ppl_f3=0
-		if self.people_latest!=None:
+		if self.people_latest!=None and self.simple_ppl_poses!=None:
 			dist =to_person_frame(robot_xy,self.simple_ppl_poses)
 			self.angled_step_feature(dist,0,0)
 			ppl_f1= self.gaussian_feature(dist,mean = self.mean1,cov = self.cov1)
@@ -208,7 +209,6 @@ def path_cost_test(path,goal_xy):
 		cost+=0.5*(c1+c2)*d
 	return cost
 def to_person_frame(robotPose,personPoses):
-	print personPoses
 	vec = -personPoses[:,:2] + robotPose
 	length = np.linalg.norm(vec,axis=1) 
 	phi = np.arctan2(vec[:,1],vec[:,0])

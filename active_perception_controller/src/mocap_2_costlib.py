@@ -75,7 +75,6 @@ class Mocap2Costlib(object):
                 p_array.persons.append(i)
         p_array.header.stamp =rospy.get_rostime()
         p_array.header.frame_id = 'map'
-        print p_array
         self.people_pub.publish(p_array)
 def listener():
     rospy.init_node('mocap_2_costlib',anonymous=True)

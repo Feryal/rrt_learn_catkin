@@ -47,6 +47,11 @@
 	    <param name="max_planning_time" type="double" value="20"/>
 	    <remap from="static_map" to="static_map_nav"/>
     </node>  
+
+					<!--Mocap to People -->
+    <node pkg="active_perception_controller" type="cmd_vel_filter.py" name="vel_filter" output="screen">
+    </node>  
+
     
 					<!--People to costmap -->
     <node pkg="active_perception_controller" type="people_to_costmap.py" name="people_costmap" output="screen">
