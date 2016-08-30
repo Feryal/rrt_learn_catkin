@@ -3,6 +3,7 @@ from sklearn.neighbors import NearestNeighbors
 from nav_msgs.msg import Path,OccupancyGrid
 import rosbag
 import rospy
+import tf
 import numpy as np
 from active_perception_controller.msg import Person,PersonArray
 from copy import deepcopy
@@ -61,8 +62,24 @@ def experiment_load2(directory):
             experiment.append(deepcopy(ex))
     return experiment
 
-
-
+def euler_from_pose(pose):
+    quat = np.zeros(4)
+    quat[0] = pose.orientation.x;quat[1] = pose.orientation.y;
+    quat[2] = pose.orientation.z;quat[3] = pose.orientation.w
+    return tf.transformations.euler_from_quaternion(quat) 
+def fill_pose_with_quaternion(pose,quaternion):
+    pose.orientation.x = quaternion[0]
+    pose.orientation.y = quaternion[1]
+    pose.orientation.z = quaternion[2]
+    pose.orientation.w = quaternion[3]
+    return pose
+def zero_orientations_except_z(pose):
+    euler = np.zeros(3)
+    out = euler_from_pose(pose)
+    euler[2]=out[2]
+    quat = tf.transformations.quaternion_from_euler(euler[0],euler[1],euler[2])
+    pose = fill_pose_with_quaternion(pose,quat)
+    return pose
 def experiment_load_sevilla(directory,msg_avg = 50):
     experiment = []
     for subdir,dirs, files in os.walk(directory+'/traj_data/'):
@@ -73,21 +90,17 @@ def experiment_load_sevilla(directory,msg_avg = 50):
             person1=[];person2=[];goal = []
             for topic, msg, t in bag.read_messages():
                 if topic == "/Robot_1/poseStamped":
-		    msg.pose.orientation.x=0
-		    msg.pose.orientation.y=0
+                    msg.pose = zero_orientations_except_z(msg.pose)
                     ex.path.poses.append(msg)
                     ex.path_array.append(np.array([msg.pose.position.x,msg.pose.position.y]))
                 elif topic== "/Person_1/poseStamped":
-		    msg.pose.orientation.x=0
-		    msg.pose.orientation.y=0
+                    msg.pose = zero_orientations_except_z(msg.pose)
                     person1.append(msg)
                 elif topic== "/Person_2/poseStamped":
-		    msg.pose.orientation.x=0
-		    msg.pose.orientation.y=0
+                    msg.pose = zero_orientations_except_z(msg.pose)
                     person2.append(msg)
                 elif topic == "/Person_3/poseStamped":
-		    msg.pose.orientation.x=0
-		    msg.pose.orientation.y=0
+                    msg.pose = zero_orientations_except_z(msg.pose)
                     goal.append(msg)
             p1 = Person();p1.pose = person1[msg_avg].pose;p1.header.frame_id = "map";p1.id=1
             p2 = Person();p2.pose = person2[msg_avg].pose;p2.header.frame_id = "map";p2.id=2
