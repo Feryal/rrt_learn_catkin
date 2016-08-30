@@ -5,7 +5,7 @@
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_left_wheel" args="0.0 -0.252 0.0725 0 0 0 base_link left_wheel_link 100"/>
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_right_wheel" args="0.0 0.252 0.0725 0 0 0 base_link right_wheel_link 100"/>
 
-<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map2.yaml">
+<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map4.yaml">
         <param name="frame_id" value="/map" />
     </node>
 
@@ -17,7 +17,7 @@
     <include file="$(find rrt_learn_gazebo)/launch/amcl.launch" />
 
 					<!-- RVIZ-->
-<!--node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/-->
+<node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/>
 
 					<!-- MOVE BASE-->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
@@ -41,21 +41,20 @@
     </node>  
 
     					     <!-- RRT -->
-    <node pkg="active_perception_controller" type="mmp.py" name="mmp_learner" output="screen">	
+    <!--node pkg="active_perception_controller" type="mmp.py" name="mmp_learner" output="screen">	
 	    <param name="rrt_eta" type="double" value="0.8" />
 	    <param name="planning_time" type="double" value="10"/>
 	    <param name="max_planning_time" type="double" value="20"/>
 	    <param name="iterations" type="int" value="10"/>
 	    <param name="validation_proportion" type="double" value="0.2"/>	
-	    <param name="learning_rate" type="double" value="0.6"/>
-	    <param name="experiment_name" type="string" value="26_6_more_people"/>
-	    <param name="learning_rate" type="double" value="0.05"/>
-	    <param name="session_name" type="string" value="pareto_front_same_features"/>
+	    <param name="learning_rate" type="double" value="0.0"/>
+	    <param name="experiment_name" type="string" value="sevilla_test"/>
+	    <param name="session_name" type="string" value="sevilla_test_poses"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="astar"/>
-	    <param name="baseline" type="boolean" value="True"/>
+	    <param name="baseline" type="boolean" value="False"/>
 	    <param name="cost_featureset" type="string" value="icra3"/>
-    </node>  		
+    </node-->  		
 
 					<!--People to costmap -->
     <node pkg="active_perception_controller" type="people_to_costmap.py" name="people_costmap" output="screen">

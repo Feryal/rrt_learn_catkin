@@ -5,7 +5,7 @@
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_left_wheel" args="0.0 -0.252 0.0725 0 0 0 base_link left_wheel_link 100"/>
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_right_wheel" args="0.0 0.252 0.0725 0 0 0 base_link right_wheel_link 100"/>
 
-<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map2.yaml">
+<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map4.yaml">
         <param name="frame_id" value="/map" />
     </node>
 
@@ -34,19 +34,15 @@
         <param name="planner_patience" type="double" value="30.0"/>
         <param name="controller_patience" type="double" value="60.0"/>
         <remap from="map" to="/map"/>
-    </node>
-    					     <!-- RRT -->
-    <!--node pkg="active_perception_controller" type="motion_planner_posq.py" name="entropy_motion_planner" output="screen">	
-	    <param name="rrt_eta" type="double" value="1.2" />
-    </node-->  
+    </node> 
 
 					 <!-- Experiment Runner -->
     <node pkg="active_perception_controller" type="experiment_runner_simple.py" name="experiment_runner" output="screen">
-	    <param name="datapoints_to_collect" type="int" value="20" />
-	    <param name="experiment_name" type="string" value="30_people_5_goals_same" />
-	    <param name="rrt_eta" type="double" value="0.4" />
-	    <param name="planning_time" type="double" value="100"/>
-	    <param name="max_planning_time" type="double" value="100"/>
+	    <param name="datapoints_to_collect" type="int" value="1" />
+	    <param name="experiment_name" type="string" value="posq_test_exp3" />
+	    <param name="rrt_eta" type="double" value="1.1" />
+	    <param name="planning_time" type="double" value="200"/>
+	    <param name="max_planning_time" type="double" value="300"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="rrtstar"/>
 	    <param name="cost_featureset" type="string" value="icra3"/>

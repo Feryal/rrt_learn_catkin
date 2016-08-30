@@ -5,7 +5,7 @@
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_left_wheel" args="0.0 -0.252 0.0725 0 0 0 base_link left_wheel_link 100"/>
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_right_wheel" args="0.0 0.252 0.0725 0 0 0 base_link right_wheel_link 100"/>
 
-<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map2.yaml">
+<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map4.yaml">
         <param name="frame_id" value="/map" />
     </node>
 
@@ -35,10 +35,10 @@
 
 					<!-- Experiment Builder -->
     <node pkg="active_perception_controller" type="experiment_builder.py" name="experiment_builder" output="screen">
-	    <param name="number_of_goals" type="int" value="5" />
-	    <param name="number_of_people" type="int" value="30" />
+	    <param name="number_of_goals" type="int" value="2" />
+	    <param name="number_of_people" type="int" value="7" />
 	    <param name="checkpoints_per_person" type="int" value="3" />
-	    <param name="experiment_name" type="string" value="30_people_5_goals_same" />
+	    <param name="experiment_name" type="string" value="posq_test_exp2" />
     </node>  
 
 </launch>

@@ -95,7 +95,7 @@ class MotionPlanner():
         self._rrt_eta = rospy.get_param("~rrt_eta", 1.5) # Notation from Karaman & Frazolli, 2011
         self.planner = rospy.get_param("~planner", "rrtstar")
         robot_radius = rospy.get_param("~robot_radius", 0.4)
-        self.goal_tolerance = rospy.get_param("~goal_tolerance", 0.3)
+        self.goal_tolerance = rospy.get_param("~goal_tolerance", 0.8)
         self.planning_time = rospy.get_param("~planning_time", 60.)
         self.max_planning_time = rospy.get_param("~max_planning_time", 70.)
         self._robot_radius_px = robot_radius / self._navmap.info.resolution
@@ -196,7 +196,7 @@ class MotionPlanner():
         weights.data = self.cost_manager.weights
         self.weights_pub.publish(weights)
         if self.planner == "rrtstar":
-            #cached_points = self.make_cached_rrt(self.sample_goal_bias,points_to_cache = 4000 )
+            #cached_points = self.make_cached_rrt(self.sample_goal_bias,points_to_cache = 1500 )
             #pr = cProfile.Profile()
             #pr.enable()
             #pose_path,array_path = self.plan_cached_rrt(cached_points)
@@ -214,7 +214,7 @@ class MotionPlanner():
         self._lock.release()
         return pose_path,array_path
 
-    def make_cached_rrt(self,sample_fn,points_to_cache = 4500,bias=0.05):
+    def make_cached_rrt(self,sample_fn,points_to_cache = 4500,bias=0.02):
         """
         CAching the RRT
         """
@@ -243,7 +243,7 @@ class MotionPlanner():
         t1 = time.time()
         planning_done = False
         rrt_iter = 0
-        bias = 0.05
+        bias = 0.02
         stp = 8
         while not planning_done:
             cached_nbrs ={}
@@ -254,6 +254,7 @@ class MotionPlanner():
             """
             reached = False
             samp_count = 0
+            alternative = True
             while reached ==False:
                     
                 prand,g_s = sample_fn(goal_xy,bias = bias)
@@ -263,36 +264,39 @@ class MotionPlanner():
                 (dist, idx) = nbrs.kneighbors(p4dist.reshape(1, -1))
                 pnearest_idx = idx.flatten(1)[0]
                 pnearest = V[pnearest_idx]
-                #mrk = self.make_sample_marker(prand)
-                #marker_points.markers.append(mrk)
-                #print len(marker_points.markers)
-                #self.samp_point_pub.publish(mrk)
-                add = np.array([self._rrt_eta*np.cos(prand[2]),self._rrt_eta*np.sin(prand[2]),prand[2]])
+
                 """
                 Turning new point into reachable point
                 """
-                # if dist < self._rrt_eta:
-                #     pnew = prand
-                # else:
-                #     pnew = self.steer(pnearest, prand)
-                pnew =np.zeros(3)
-                pnew[:2] = pnearest[:2]+add[:2]
-                pnew[2] = prand[2]
-                iteration_paths = []
-                stp =100
-                #dif = prand[:2] - pnearest[:2]
-                #ang = np.arctan2(dif[0],dif[1])
-                #prand[-1] = ang
 
-                path_new,reached = posq.simulate(pnearest,prand,steps = stp)
+
+                stp = 50
+                path_new,reached,stp = posq.simulate(pnearest,prand,steps = stp,return_steps=True)
                 pnew = path_new[-1]
+                if alternative == True:
+                    d = prand[:2] - pnearest[:2]
+                    ang = np.arctan2(d[1],d[0])
+
+                    add = np.array([self._rrt_eta*np.cos(ang),self._rrt_eta*np.sin(ang),ang])
+                    pnew =np.zeros(3)
+                    pnew[:2] = pnearest[:2]+add[:2]
+                    pnew[2] = ang
+                
                 #self.publish_local_path(pub_path)
                 #pnew = [pnearest[0]+ self._rrt_eta*np.cos(pnearest[2]),pnearest[1]+ self._rrt_eta*np.sin(pnearest[2]),pnearest[2]]
                 if reached == True:
                     pnew = prand
                 elif reached == False:
+                    stp = 400
                     path_new,reached,stp = posq.simulate(pnearest,pnew,steps = stp,return_steps = True,eps=0.1)
                     pnew = path_new[-1]
+                """
+                Checking if segment is valid and updating graph
+                """
+                #stp = 40
+                
+                #stp = 30
+
             """
             Checking if segment is valid and updating graph
             """
@@ -310,24 +314,36 @@ class MotionPlanner():
                 cached_nbrs["pnew"] = pnew
                 cached_nbrs["path_new"] = path_new
                 cached_nbrs["Pnear_idx"] = Pnear_idx
+                cached_nbrs["Pnear_forward"] = []
+                cached_nbrs["Pnear_backward"] = []
                 cached_nbrs["pnear_pnew"] = []
+                cached_nbrs["pnew_pnear"] = []
                 for p_idx in Pnear_idx:
                     p = V_xy[p_idx]
                     p_xyz = V[p_idx]
-                    path_forward,reached_forward = posq.simulate(p_xyz,pnew,steps = int(stp))
-                    if reached_forward == True:
-                        path_forward_safe = self.path_safe(path_forward)
-                    else: 
-                        path_forward_safe = None
+                    #path_forward,reached_forward = posq.simulate(p_xyz,pnew,steps = int(stp))
+                    path,reached = posq.simulate(p_xyz,pnew,steps = int(stp))
+                    if reached == True:
+                        safe = self.path_safe(path)
+                        if safe is True:
+                            path_info = ({"path":path,"reached":reached,"safe":safe})
+                            cached_nbrs["pnear_pnew"].append(path_info)
+                            cached_nbrs["Pnear_forward"].append(p_idx)
+                    # else: 
+                    #     path_forward_safe = None
 
-                    path_backward,reached_backward = posq.simulate(pnew,p_xyz,steps = int(stp)) 
-                    if reached_backward == True:
-                        path_backward_safe = self.path_safe(path_backward)
-                    else: 
-                        path_backward_safe = None
-                    path_info = ({"forward":path_forward,"reached_forward":reached_forward,"safe_forward":path_forward_safe,
-                    "backward":path_backward,"reached_backward":reached_backward,"safe_backward":path_backward_safe})
-                    cached_nbrs["pnear_pnew"].append(path_info)
+                    path,reached = posq.simulate(pnew,p_xyz,steps = int(stp)) 
+                    if reached == True:
+                        safe = self.path_safe(path)
+                        if safe == True:
+                            path_info = ({"path":path,"reached":reached,"safe":safe})
+                            cached_nbrs["pnew_pnear"].append(path_info)
+                            cached_nbrs["Pnear_backward"].append(p_idx)
+                    # else: 
+                    #     path_backward_safe = None
+                    #path_info = ({"forward":path_forward,"reached_forward":reached_forward,"safe_forward":path_forward_safe,
+                    #"backward":path_backward,"reached_backward":reached_backward,"safe_backward":path_backward_safe})
+                    #cached_nbrs["pnear_pnew"].append(path_info)
                 V.append(pnew)
                 V_xy.append(p4dist)
                 nbrs.fit(V_xy)
@@ -335,8 +351,8 @@ class MotionPlanner():
                 #marker_points.markers.append(mark)
                 sampled_points.append(cached_nbrs)
             rrt_iter +=1
-
-
+            if len(V) == points_to_cache-50:
+                bias = 0.9
             if len(V) == points_to_cache:
                 planning_done=True
 
@@ -382,7 +398,6 @@ class MotionPlanner():
         rrt_iter = 0
         while not planning_done:
             t2 = time.time()
-            #bias*=1.0025 # increase the goal bias as the RRT progresses
             """
             Sampling new point
             """
@@ -390,35 +405,28 @@ class MotionPlanner():
             prand = cached["prand"]
             pnearest_idx = cached["pnearest_idx"]
             pnearest = V[pnearest_idx]
-            #mrk = self.make_sample_marker(prand)
-            #marker_points.markers.append(mrk)
-            #print len(marker_points.markers)
-            #self.samp_point_pub.publish(mrk)
-
             """
             Turning new point into reachable point
             """
             pnew =cached["pnew"]
             path_new = cached["path_new"]
-            #Pnear_idx,pnear_dist = flann.nn_radius(pnew, r)
             Pnear_idx = cached["Pnear_idx"]
             pmin_idx = pnearest_idx
 
             cum_c = self.integrate_costs(edge_C,parents,pnearest_idx)
             min_edge_c = self.cost_manager.path_cost(path_new,goal_xy[:2])
             cmin = cum_c +min_edge_c
-            cumulative_costs = []
-            for num,p_idx in enumerate(Pnear_idx):
+            cumulative_costs = {}
+            Pnear_fwd = cached["Pnear_forward"]
+            for num,p_idx in enumerate(Pnear_fwd):
                 p = V_xy[p_idx]
                 p_xyz = V[p_idx]
                 cum_cost = self.integrate_costs(edge_C,parents,p_idx)
-                cumulative_costs.append(cum_cost)
-                # WATCH OUT. You might get a nearest neightbour problem if the steps are not good enough.
-                # perhaps we can have a distance simulation so that the nearest neighbor calculation remains consistent.
-                p_idx_path = cached["pnear_pnew"][num]["forward"]
-                reached = cached["pnear_pnew"][num]["reached_forward"]
-                safe = cached["pnear_pnew"][num]["safe_forward"]
-                if reached == True:
+                cumulative_costs[p_idx] = cum_cost
+                p_idx_path = cached["pnear_pnew"][num]["path"]
+                reached = cached["pnear_pnew"][num]["reached"]
+                safe = cached["pnear_pnew"][num]["safe"]
+                if reached is True and safe is True:
                     path_c = self.cost_manager.path_cost(p_idx_path,goal_xy[:2])
                 else:
                     path_c = 0
@@ -445,22 +453,23 @@ class MotionPlanner():
             """
             Re-wire the tree
             """
-            for en,p_idx in enumerate(Pnear_idx):
-                # so if the near nodes, have children
-                #parent
+            unsafe = 0
+            Pnear_bwd = cached["Pnear_backward"]
+            for en,p_idx in enumerate(Pnear_bwd):
                 if parents.has_key(p_idx):
+                    if not cumulative_costs.has_key(p_idx):
+                        cumulative_costs[p_idx] = self.integrate_costs(edge_C,parents,p_idx)
                     p_xyz = V[p_idx]
-                    rewire_path = cached["pnear_pnew"][num]["backward"]
-                    rewire_reached = cached["pnear_pnew"][num]["reached_backward"]
-                    rewire_safe = cached["pnear_pnew"][num]["safe_backward"]
+                    rewire_path = cached["pnew_pnear"][en]["path"]
+                    rewire_reached = cached["pnew_pnear"][en]["reached"]
+                    rewire_safe = cached["pnew_pnear"][en]["safe"]
                     #rewire_path,rewire_reached = posq.simulate(pnew,p_xyz,steps = int(stp))
-                    if rewire_reached == True:
+                    if rewire_reached is True and rewire_safe is True :
                         rewire_path_c = self.cost_manager.path_cost(rewire_path,goal_xy[:2])
                     else:
                         rewire_path_c = 0
                     c = cumulative_last + rewire_path_c
-                    #rewire_reached = False
-                    if (rewire_safe is True and c < cumulative_costs[en] and rewire_reached is True):
+                    if (rewire_safe is True and c < cumulative_costs[p_idx] and rewire_reached is True):
                         E[parents[p_idx]].remove(p_idx)
                         edge_C.pop(parents[p_idx],p_idx)
                         edge_C[pnew_idx,p_idx] = rewire_path_c
@@ -475,8 +484,12 @@ class MotionPlanner():
                 nbrs.fit(V_xy)
                 p4dist = np.zeros(4)
                 p4dist[:2] = goal_xy[:2];p4dist[2] = np.cos(goal_xy[2]);p4dist[3] = np.sin(goal_xy[2])
-                dist,points_near_goal = nbrs.radius_neighbors(p4dist, self.goal_tolerance+0.2, return_distance = True)
-                points_near_goal = points_near_goal[0]
+                points_near_goal = []
+                add = 0
+                while len(points_near_goal)==0:
+                    dist,points_near_goal = nbrs.radius_neighbors(p4dist, self.goal_tolerance+add, return_distance = True)
+                    points_near_goal = points_near_goal[0]
+                    add +=0.1
                 print "DONE PLANNING"
                 print "TIME TAKEN",time.time()-t1
                 print "POINTS NEAR GOAL",points_near_goal
@@ -500,7 +513,7 @@ class MotionPlanner():
         return pt,path
 
     
-    def posq_rrtstar(self, sample_fn,bias = 0.05):
+    def posq_rrtstar(self, sample_fn,bias = 0.02):
         """
         RRT* Algorithm
         """
@@ -543,6 +556,7 @@ class MotionPlanner():
             """
             reached = False
             samp_count = 0
+            alternative = True
             while reached ==False:
                     
                 prand,g_s = sample_fn(goal_xy,bias = bias)
@@ -552,35 +566,27 @@ class MotionPlanner():
                 (dist, idx) = nbrs.kneighbors(p4dist.reshape(1, -1))
                 pnearest_idx = idx.flatten(1)[0]
                 pnearest = V[pnearest_idx]
-                #mrk = self.make_sample_marker(prand)
-                #marker_points.markers.append(mrk)
-                #print len(marker_points.markers)
-                #self.samp_point_pub.publish(mrk)
-                add = np.array([self._rrt_eta*np.cos(prand[2]),self._rrt_eta*np.sin(prand[2]),prand[2]])
+
                 """
                 Turning new point into reachable point
                 """
-                # if dist < self._rrt_eta:
-                #     pnew = prand
-                # else:
-                #     pnew = self.steer(pnearest, prand)
-                pnew =np.zeros(3)
-                pnew[:2] = pnearest[:2]+add[:2]
-                pnew[2] = prand[2]
-                iteration_paths = []
-                stp =100
-                #dif = prand[:2] - pnearest[:2]
-                #ang = np.arctan2(dif[0],dif[1])
-                #prand[-1] = ang
+                stp = 50
+                path_new,reached,stp = posq.simulate(pnearest,prand,steps = stp,return_steps=True)
+                pnew = path_new[-1]
+                if alternative == True:
+                    d = prand[:2] - pnearest[:2]
+                    ang = np.arctan2(d[1],d[0])
 
-                path_new,reached = posq.simulate(pnearest,prand,steps = stp)
-                
+                    add = np.array([self._rrt_eta*np.cos(ang),self._rrt_eta*np.sin(ang),ang])
+                    pnew =np.zeros(3)
+                    pnew[:2] = pnearest[:2]+add[:2]
+                    pnew[2] = ang                
                 #self.publish_local_path(pub_path)
                 #pnew = [pnearest[0]+ self._rrt_eta*np.cos(pnearest[2]),pnearest[1]+ self._rrt_eta*np.sin(pnearest[2]),pnearest[2]]
                 if reached == True:
                     pnew = prand
                 elif reached == False:
-                    pnew = path_new[-1]
+                    stp = 400
                     path_new,reached,stp = posq.simulate(pnearest,pnew,steps = stp,return_steps = True,eps=0.1)
                     pnew = path_new[-1]
                 """
@@ -614,13 +620,14 @@ class MotionPlanner():
                     # perhaps we can have a distance simulation so that the nearest neighbor calculation remains consistent.
                     p_idx_path,reached = posq.simulate(p_xyz,pnew,steps = int(stp),eps = 0.1)
                     #reached = False
-                    if reached == True:
+                    safe = self.path_safe(p_idx_path)
+                    if reached == True and safe == True:
                         path_c = self.cost_manager.path_cost(p_idx_path,goal_xy[:2])
                     else:
                         path_c = 0
                     #reached = False
                     c = cum_cost + path_c
-                    if (self.path_safe(p_idx_path) is True and
+                    if (safe is True and
                         reached is True and c < cmin):
                         cmin = c
                         min_edge_c = path_c
@@ -648,13 +655,14 @@ class MotionPlanner():
                         p_xyz = V[p_idx]
                         rewire_path,rewire_reached = posq.simulate(pnew,p_xyz,steps = int(stp),eps = 0.1)
                         #rewire_reached = False
-                        if rewire_reached == True:
+                        rewire_safe = self.path_safe(rewire_path)
+                        if rewire_reached == True and rewire_safe == True:
                             rewire_path_c = self.cost_manager.path_cost(rewire_path,goal_xy[:2])
                         else:
                             rewire_path_c = 0
                         c = cumulative_last + rewire_path_c
 
-                        if (self.path_safe(rewire_path) is True and c < cumulative_costs[en] and rewire_reached is True):
+                        if (rewire_safe is True and c < cumulative_costs[en] and rewire_reached is True):
                             E[parents[p_idx]].remove(p_idx)
                             edge_C.pop(parents[p_idx],p_idx)
                             edge_C[pnew_idx,p_idx] = rewire_path_c
@@ -672,13 +680,14 @@ class MotionPlanner():
                 p4dist[:2] = goal_xy[:2];p4dist[2] = np.cos(goal_xy[2]);p4dist[3] = np.sin(goal_xy[2])
                 dist,points_near_goal = nbrs.radius_neighbors(p4dist, self.goal_tolerance+0.2, return_distance = True)
                 points_near_goal = points_near_goal[0]
-                if len(points_near_goal)==0:
-                    dist,point = nbrs.kneighbors(p4dist)    
-                    points_near_goal = point[0]
-                    planning_done = True
-                else:
-                    planning_done = True
+                points_near_goal = []
+                add = 0
+                while len(points_near_goal)==0:
+                    dist,points_near_goal = nbrs.radius_neighbors(p4dist, self.goal_tolerance+add, return_distance = True)
+                    points_near_goal = points_near_goal[0]
+                    add +=0.1
                 print "Could not find solution for 10 seconds, going with solution closest to goal."
+                planning_done = True
             elif time.time()-t1>planning_time:
                 p4dist = np.zeros(4)
                 p4dist[:2] = goal_xy[:2];p4dist[2] = np.cos(goal_xy[2]);p4dist[3] = np.sin(goal_xy[2])
@@ -691,7 +700,7 @@ class MotionPlanner():
                     planning_done = False
                     planning_time+=5.
                     if bias < 0.5:
-                        bias +=0.1
+                        bias =0.9
                 else:
                     planning_done = True
             #self.publish_rrt(V,E)     
@@ -908,7 +917,7 @@ class MotionPlanner():
         if np.random.binomial(1,bias)==0:
             point =  self.sample_free_uniform()
         else:
-            noise = np.random.normal(size=2)
+            noise = np.random.normal(size=2,scale= 0.2)
             point[:2] = goal_xy[:2]+noise
             point[2] = goal_xy[2]
             goal_sample = True

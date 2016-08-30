@@ -1,4 +1,4 @@
-image: /home/teresajoy/rrt_learn/src/rrt_learn_gazebo/launch/map2.pgm
+image: /home/parallels/rrt_learn/src/rrt_learn_gazebo/launch/map2.pgm
 resolution: 0.103400
 origin: [-28.435000, -18.508600, 0.000000]
 negate: 0

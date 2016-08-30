@@ -5,7 +5,7 @@
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_left_wheel" args="0.0 -0.252 0.0725 0 0 0 base_link left_wheel_link 100"/>
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_right_wheel" args="0.0 0.252 0.0725 0 0 0 base_link right_wheel_link 100"/>
 
-<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map2.yaml">
+<node name="map_server" pkg="map_server" type="map_server" args="$(find rrt_learn_gazebo)/cfg/map4.yaml">
         <param name="frame_id" value="/map" />
     </node>
 

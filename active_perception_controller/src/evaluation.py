@@ -42,8 +42,8 @@ from experiment_loading import experiment_load2,experiment_load_sevilla
 
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "posq_test")
-        self.session_name = rospy.get_param("~session_name", "posq_learn_test")
+        self.exp_name = rospy.get_param("~experiment_name", "posq_test_exp2")
+        self.session_name = rospy.get_param("~session_name", "posq_learn_small")
         self.real_data = rospy.get_param("~real_data", True)
         self.no_of_runs = rospy.get_param( "number_of_runs",2)
         self.filepath = os.path.dirname(os.path.abspath(__file__))
@@ -115,7 +115,6 @@ class Evaluator(object):
         for method in self.results[0].keys():
             results_for_plots.append(self.get_multiple_runs(method))
 
-
         f = plt.figure()
         ax = f.add_subplot(111)
         for n,method in enumerate(self.results[0].keys()):
@@ -135,6 +134,27 @@ class Evaluator(object):
         ax.set_ylabel("Average Cost difference",fontweight = 'bold',fontsize = 14)
         ax.set_xlabel("Iterations",fontweight='bold',fontsize = 14)
         f.savefig(self.results_dir+"/cost_diff_val.png")
+
+        f = plt.figure()
+        ax = f.add_subplot(111)
+        bar_vals = []
+        labl = []
+        for n,method in enumerate(self.results[0].keys()):
+            labl.append(method)
+            res = results_for_plots[n]
+
+            bar_vals.append(np.var(np.concatenate((res[0],res[1]))))
+        N = len(self.results[0].keys()) ; ind = np.arange(N)
+        width = 0.35
+        rects1 = ax.bar(ind, bar_vals, width, color='r')
+        ax.set_xticks(ind)
+        ax.set_xticklabels(labl)
+        plt.legend(bbox_to_anchor=(1., 1,0.,-0.06),loc=1)
+        ax.set_ylabel("Variance across iterations",fontweight = 'bold',fontsize = 14)
+        f.savefig(self.results_dir+"/var.png")
+
+        
+
 
 
         f = plt.figure()

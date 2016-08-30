@@ -78,13 +78,6 @@ class Learner(object):
         self.write_learning_params(self.results_dir)
         #shuffle(self.experiment_data)
         self.single_run("1")
-        #self.sevilla_test_run("1")
-        #shuffle(self.experiment_data)
-        #self.pareto_run("3")
-        #shuffle(self.experiment_data)
-        #self.pareto_run("4")
-        #shuffle(self.experiment_data)
-        #self.pareto_run("5")
 
     def write_learning_params(self,directory):
         f = open(directory+"readme","w")
@@ -97,72 +90,39 @@ class Learner(object):
 
     def sevilla_test_run(self,name):
         results = {}
-        self.planner.planning_time = 5;self.planner.max_planning_time = 5
+        self.planner.planning_time = 114;self.planner.max_planning_time = 120
         self.cache_size = 2500
         results["RLT_NC_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["RLT_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
         fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
 
-    def pareto_run(self,name):
-        # Pareto front run involves RRT at 2,5,8,10 seconds
-        results = {}
-        self.planner.planning_time = 2;self.planner.max_planning_time = 2
-        self.cache_size = 1400
-        results["rrt_2"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_2"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
-
-        self.planner.planning_time = 5;self.planner.max_planning_time = 5
-        self.cache_size = 2300
-        results["rrt_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
-
-        self.planner.planning_time = 8;self.planner.max_planning_time = 8
-        self.cache_size = 2900
-        results["rrt_8"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_8"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
-
-        self.planner.planning_time = 10;self.planner.max_planning_time = 10
-        self.cache_size = 3300
-        results["rrt_10"]= self.learning_loop(self.planner,planner_type="rrtstar")
-        results["crrt_10"]= self.learning_loop(self.planner,planner_type="cached_rrt")      
-
-        # Then astar for 0.8
-        self.planner.astar_res = 0.8
-        results["astar_0.8"]=  self.learning_loop(self.planner,planner_type="astar")
-        # astar for 0.4
-        self.planner.astar_res = 0.5
-        results["astar_0.5"]= self.learning_loop(self.planner,planner_type="astar")
-
-        self.planner.astar_res = 0.3
-        results["astar_0.3"]=  self.learning_loop(self.planner,planner_type="astar")
-
-        self.planner.astar_res = 0.2
-        results["astar_0.2"]=  self.learning_loop(self.planner,planner_type="astar")
-        #results = {"star_0.8":results_astar_08}
-        fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
-
-
     def single_run(self,name):
-        self.planner.planning_time = 100;self.planner.max_planning_time = 200
-        self.cache_size = 1500
-        results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
+        self.planner.planning_time = 300;self.planner.max_planning_time = 320
+        self.cache_size = 2500
+        #results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
         results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
+        results = {"rlt":results_cached_rrt}
+        fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
+    def variance_run(self,name):
 
-        # astar for 0.4
 
-        # astar for 0.2
-        #self.planner.astar_res = 0.2
-        #results_astar_02 = self.learning_loop(self.planner,planner_type="astar")
-        # cached RRT star
+        self.planner.planning_time = 10;self.planner.max_planning_time = 15
+        nc_300 = self.learning_loop(self.planner,planner_type="rrtstar")
 
-        results = {"rlt-nc":results_rrtstar,"rlt":results_cached_rrt}
-        #results = {"star_0.8":results_astar_08}
+        #self.planner.planning_time = 300;self.planner.max_planning_time = 320
+        #nc_300 = self.learning_loop(self.planner,planner_type="rrtstar")
+        #self.planner.planning_time = 50;self.planner.max_planning_time = 60
+        #nc_50 = self.learning_loop(self.planner,planner_type="rrtstar")
+        #self.planner.planning_time = 100;self.planner.max_planning_time = 120
+        #nc_100 = self.learning_loop(self.planner,planner_type="rrtstar")
+        #self.planner.planning_time = 200;self.planner.max_planning_time = 220
+        #nc_200 = self.learning_loop(self.planner,planner_type="rrtstar")
+
+        #results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
+        results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
+        results = {"rlt-nc_300":nc_300}
         fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
 
-
-        #self.robot_pose_srv = rospy.ServiceProxy('change_robot_position', positionChange)
-        #self.ppl_pose_srv = rospy.ServiceProxy('change_people_position', ppl_positionChange, self.handle_ppl_position_change)
-    
     def learning_loop(self,motion_planner,planner_type = "rrtstar"):
 
         # some time bookkeeping
@@ -176,7 +136,7 @@ class Learner(object):
 
         # Initialise weights.
         self.learner_weights = np.zeros(self.costlib.weights.shape[0])
-        self.learner_weights[1] = 1
+        self.learner_weights[1] = 2
         self.learner_weights[0] = 1# some cost for distance
         validating = False
         similarity = []
@@ -187,7 +147,7 @@ class Learner(object):
         all_feature_sums = []
         for n,i in enumerate(self.experiment_data):
             self.ppl_pub.publish(i.people)
-            rospy.sleep(0.5)
+            rospy.sleep(1.)
             i.feature_sum = self.feature_sums(i.path_array,i.goal_xy)
 
             print "FEATURE SUM", i.feature_sum
@@ -206,6 +166,7 @@ class Learner(object):
             iter_similarity = []
             iter_cost_diff = []
             iter_time = []
+            gradient_store = []
             iter_grad = np.zeros(self.learner_weights.shape[0])
             self.costlib.weights = self.learner_weights
             self.initial_weights = np.copy(self.learner_weights)
@@ -219,6 +180,7 @@ class Learner(object):
                     validating = False
                 print "CHANGING POSITION"
                 self.planner.publish_empty_path()
+                #validating = True
                 
                 config_change(i.path.poses[0],i.people)
                 rospy.sleep(1.)
@@ -275,7 +237,9 @@ class Learner(object):
                 print "COST DIFFERENCE", iter_cost_diff
                           
                 print "PATH FEATURE SUM",path_feature_sum
+                print "PAth Feature SUM LA",path_feature_sum_la
                 iter_similarity.append(self.get_similarity(i.path_array,array_path))
+            gradient_store.append(iter_grad/(len(self.experiment_data)*(1-self.validation_proportion)))
             grad = (1-self.momentum)*iter_grad/(len(self.experiment_data)*(1-self.validation_proportion)) + self.momentum*prev_grad
             self.learner_weights = self.learner_weights - self.learning_rate*grad
             prev_grad = grad
@@ -290,7 +254,7 @@ class Learner(object):
         print cost_diff
         results = {"similarity":similarity,"cost_diff":cost_diff,
                 "weights_final":self.learner_weights,"weights_initial":self.initial_weights,
-                 "initial_paths":initial_paths,"final_paths":final_paths,"validation_proportion":self.validation_proportion,"time_to_cache":time_to_cache,"time_per_iter":time_taken}
+                 "initial_paths":initial_paths,"final_paths":final_paths,"validation_proportion":self.validation_proportion,"gradients":gradient_store,"time_to_cache":time_to_cache,"time_per_iter":time_taken}
 
         return results
 
