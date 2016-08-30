@@ -6,6 +6,7 @@ import rospy
 import numpy as np
 from active_perception_controller.msg import Person,PersonArray
 from copy import deepcopy
+import pdb
 
 class example(object):
     def __init__(self):
@@ -72,13 +73,21 @@ def experiment_load_sevilla(directory,msg_avg = 50):
             person1=[];person2=[];goal = []
             for topic, msg, t in bag.read_messages():
                 if topic == "/Robot_1/poseStamped":
+		    msg.pose.orientation.x=0
+		    msg.pose.orientation.y=0
                     ex.path.poses.append(msg)
                     ex.path_array.append(np.array([msg.pose.position.x,msg.pose.position.y]))
                 elif topic== "/Person_1/poseStamped":
+		    msg.pose.orientation.x=0
+		    msg.pose.orientation.y=0
                     person1.append(msg)
                 elif topic== "/Person_2/poseStamped":
+		    msg.pose.orientation.x=0
+		    msg.pose.orientation.y=0
                     person2.append(msg)
                 elif topic == "/Person_3/poseStamped":
+		    msg.pose.orientation.x=0
+		    msg.pose.orientation.y=0
                     goal.append(msg)
             p1 = Person();p1.pose = person1[msg_avg].pose;p1.header.frame_id = "map";p1.id=1
             p2 = Person();p2.pose = person2[msg_avg].pose;p2.header.frame_id = "map";p2.id=2
