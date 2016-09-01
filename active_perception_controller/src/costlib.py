@@ -89,7 +89,7 @@ class Cost_Manager(object):
 	    vals.values = [0]*len(self.costmap.points)
 	    self.costmap.channels.append(vals)
 	def update_costmap(self):
-		self._lock.aquire()
+		self._lock.acquire()
 		self.featureset = self.icra_featureset_p
 		goal_xy = [self._goal.pose.position.x,self._goal.pose.position.y]
 		vals = ChannelFloat32()
