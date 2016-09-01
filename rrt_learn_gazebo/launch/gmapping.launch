@@ -19,7 +19,7 @@
 <node pkg="joy" type="joy_node" name="joy_node_local"/>
 
 
-	  <include file="$(find rrt_learn_gazebo)/launch/teresa_gazebo.launch">
+	  <include file="$(find rrt_learn_gazebo)/launch/teresa_gazebo_sevilla.launch">
   	</include>
 
 </launch>
