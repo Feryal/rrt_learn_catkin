@@ -513,7 +513,7 @@ class MotionPlanner():
         return pt,path
 
     
-    def posq_rrtstar(self, sample_fn,bias = 0.02):
+    def posq_rrtstar(self, sample_fn,bias = 0.06):
         """
         RRT* Algorithm
         """

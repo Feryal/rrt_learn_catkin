@@ -58,14 +58,8 @@ class Learner(object):
         self.experiment_data = experiment_load2(self.directory)
         self.planner = MotionPlanner()
         self.validation_proportion = rospy.get_param("~validation_proportion", 0.5)
-        #self.experiment_data = self.experiment_data[:10]
-        # shuffle the experimental data: REMEMBER SHUFFLING IS IN PLACE.
-        #shuffle(self.experiment_data)
         self.costlib = self.planner.cost_manager
         self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
-        
-        #self.gt_weights = np.array([ 2. ,  0.5,  0. ,  0.3 ,  2. ,  0.5,  0.4 ])
-        #fn.pickle_saver({"featureset":"icra2","weights":self.gt_weights},self.directory+"/weights.pkl")
         if self.baseline_eval==True:
             try:
                 loaded = fn.pickle_loader(self.directory+"/weights.pkl")
@@ -76,9 +70,8 @@ class Learner(object):
                 self.baseline_eval=False
 
         self.write_learning_params(self.results_dir)
-        #shuffle(self.experiment_data)
-        self.single_run("1")
-
+        #self.sevilla_test_run("1")
+        self.single_run("2")
     def write_learning_params(self,directory):
         f = open(directory+"readme","w")
         f.write("Learning parameters used: \n------ \n \n")
@@ -90,22 +83,20 @@ class Learner(object):
 
     def sevilla_test_run(self,name):
         results = {}
-        self.planner.planning_time = 114;self.planner.max_planning_time = 120
-        self.cache_size = 2500
+        self.planner.planning_time = 100;self.planner.max_planning_time = 120
+        self.cache_size = 1200
         results["RLT_NC_5"]= self.learning_loop(self.planner,planner_type="rrtstar")
         results["RLT_5"]=  self.learning_loop(self.planner,planner_type="cached_rrt")
         fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
 
     def single_run(self,name):
-        self.planner.planning_time = 300;self.planner.max_planning_time = 320
+        self.planner.planning_time = 140;self.planner.max_planning_time = 160
         self.cache_size = 2500
-        #results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
-        results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
-        results = {"rlt":results_cached_rrt}
+        results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
+        #results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
+        results = {"rlt-nc":results_rrtstar}
         fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
     def variance_run(self,name):
-
-
         self.planner.planning_time = 10;self.planner.max_planning_time = 15
         nc_300 = self.learning_loop(self.planner,planner_type="rrtstar")
 
@@ -136,7 +127,7 @@ class Learner(object):
 
         # Initialise weights.
         self.learner_weights = np.zeros(self.costlib.weights.shape[0])
-        self.learner_weights[1] = 2
+        self.learner_weights[1] = 4
         self.learner_weights[0] = 1# some cost for distance
         validating = False
         similarity = []

@@ -42,8 +42,8 @@ from experiment_loading import experiment_load2,experiment_load_sevilla
 
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "posq_test_exp2")
-        self.session_name = rospy.get_param("~session_name", "posq_learn_small")
+        self.exp_name = rospy.get_param("~experiment_name", "30_people_5_goals_same")
+        self.session_name = rospy.get_param("~session_name", "rlt_rlt_nc_convergence")
         self.real_data = rospy.get_param("~real_data", True)
         self.no_of_runs = rospy.get_param( "number_of_runs",2)
         self.filepath = os.path.dirname(os.path.abspath(__file__))
