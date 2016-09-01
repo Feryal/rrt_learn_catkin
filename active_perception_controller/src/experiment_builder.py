@@ -11,6 +11,9 @@ from geometry_msgs.msg import PoseStamped,PoseWithCovarianceStamped,Pose,PointSt
 import tf
 from visualization_msgs.msg import Marker,MarkerArray
 
+CURRENT = os.path.dirname(os.path.abspath(__file__))
+PARENT = os.path.split(CURRENT)[0]
+
 class Goal_Collector(object):
     # this class listens to published points or RViZ and logs them down,
     # to be used as possible random goals for the RRT-IRL algorithm data collection.
@@ -36,9 +39,6 @@ class Goal_Collector(object):
                 self.done = True
 
 class People_Collector(object):
-    # this class listens to published points or RViZ and logs them down,
-    # to be used as possible random goals for the RRT-IRL algorithm data collection.
-    # TODO: put these settings for the checkpoints and number of people as params
     def __init__(self,name):
         # specify number of goals to collect
         self.checkpoints_per_person = rospy.get_param("~checkpoints_per_person", 3)
@@ -46,14 +46,13 @@ class People_Collector(object):
         self.no_of_people = rospy.get_param("~number_of_people", 3)
         self.save_name = name
         # create data containers
-        self.point_pub = rospy.Publisher('all_clicked',MarkerArray,queue_size = 200)
+        self.point_pub = rospy.Publisher('all_clicked',MarkerArray,queue_size = 1)
         self.all_points = MarkerArray()
         self.people = []
         for i in range(self.no_of_people):
             p = PersonArray()
             self.people.append(p)
         # specify name of file to be save
-
         self.current_person = 0
         # to stop spinning
         self.done = False
@@ -118,10 +117,9 @@ class experiment_buider(object):
         else:
             rospy.signal_shutdown("Goal and people colection finished")
 def listener():
-    rospy.init_node('l',anonymous=True)
+    rospy.init_node('experiment_build',anonymous=True)
     name = rospy.get_param("~experiment_name", "test")
-    path = os.path.dirname(os.path.abspath(__file__))
-    name = path+"/"+name
+    name = PARENT+"/data/"+name
     fn.make_dir(name)
     people_collector = experiment_buider(name)
     rospy.spin()
