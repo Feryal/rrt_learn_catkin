@@ -1,33 +1,26 @@
-#!/usr/bin/env python 
-from __future__ import with_statement 
-
-import time
+#!/usr/bin/env python
+import os
+import sys 
 import pdb
-import sys
 import rospy
 import math
 import numpy as np
 import tf
 import actionlib
 import copy
-from geometry_msgs.msg import Twist
-from geometry_msgs.msg import PoseStamped,PoseWithCovarianceStamped,Pose
+from geometry_msgs.msg import PoseStamped,Pose
 from geometry_msgs.msg import PointStamped
-from actionlib_msgs.msg import GoalStatusArray
-from move_base_msgs.msg import MoveBaseGoal,MoveBaseAction
 from active_perception_controller.msg import Person,PersonArray
-from nav_msgs.msg import Odometry
 import helper_functions as fn
 from visualization_msgs.msg import Marker,MarkerArray
-from sensor_msgs.msg import LaserScan
 from people_publisher import People_Publisher
 from std_msgs.msg import Float32MultiArray
 import rosbag
-import os
 from motion_planner_posq import MotionPlanner
 from mmp import config_change
 
-
+CURRENT = os.path.dirname(os.path.abspath(__file__))
+PARENT = os.path.split(CURRENT)[0]
 TELEOP = 1
 AUTO = 2
 
@@ -48,7 +41,7 @@ class Config_Publisher(object):
         fn.make_dir(goal_directory+'/traj_data/')
         rospy.on_shutdown(self.shutdown)
         #first bag file to record
-        self.bag = rosbag.Bag(goal_directory+'/traj_data/quick.bag','w')
+        self.bag = rosbag.Bag(goal_directory+'/traj_data/test1.bag','w')
         self.tf_listener = tf.TransformListener()
         self.people_static = people_static
         #self.set_initial_position() # initial position set based on the first place in goals
@@ -66,24 +59,11 @@ class Config_Publisher(object):
         self.pub1 = rospy.Publisher('visualise_goal',Marker,queue_size = 200)
         self.pub2 = rospy.Publisher('visualise_orient',Marker,queue_size = 200)
         # Robot position and people subscribers
-        #self.position_sub = rospy.Subscriber("/amcl_pose",PoseWithCovarianceStamped,self.position_callback)
-        #self.pos_marker_sub = rospy.Subscriber("/amcl_pose",PoseWithCovarianceStamped,self.pos_marker_callback)
         self.people_sub = rospy.Subscriber("/person_poses",PersonArray,self.people_callback)
         #self.weights_sub = rospy.Subscriber("weights",Float32MultiArray,self.weights_cb)
         rospy.sleep(4.)
         print "ABOUT TO ENTER THE LOOOOOOOPP__________________________________________________"
         self.random_goal_loop()
-
-    def get_random_goal(self):
-        new_goal = self.goal_index
-        if len(self.goals)==1:
-            print "Only one goal"
-            new_goal=0
-        else:
-            while new_goal == self.goal_index:
-                print "im stuck here"
-                new_goal = np.random.randint(low = 0,high = len(self.goals))
-        self.goal_index = new_goal
     def random_goal_loop(self):
         self.goal_index = 0
         self.initial_pose = self.construct_goal(self.goals[0][0],self.goals[0][1])
@@ -125,6 +105,17 @@ class Config_Publisher(object):
         goal.pose.orientation.z=out[-2]
         goal.pose.orientation.w=out[-1]
         return goal
+
+    def get_random_goal(self):
+        new_goal = self.goal_index
+        if len(self.goals)==1:
+            print "Only one goal"
+            new_goal=0
+        else:
+            while new_goal == self.goal_index:
+                print "im stuck here"
+                new_goal = np.random.randint(low = 0,high = len(self.goals))
+        self.goal_index = new_goal
     def initialise_marker(self):
         self.goal_marker = Marker()
         self.goal_marker.type = Marker.CUBE
@@ -152,10 +143,9 @@ class Config_Publisher(object):
         rospy.signal_shutdown("shutdown")
 
 def listener():
-    rospy.init_node('l',anonymous=True)
-    name = rospy.get_param("~experiment_name", "test1")
-    path = os.path.dirname(os.path.abspath(__file__))
-    name = path+"/"+name
+    rospy.init_node('experiment_runner_simple',anonymous=True)
+    name = rospy.get_param("~experiment_name", "posq_test_exp3")
+    name = PARENT+"/data/"+name
 
     mode = rospy.get_param("~drive_mode", 2)
     people_static = rospy.get_param("~people_static", True)

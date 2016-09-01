@@ -40,16 +40,19 @@ from active_perception_controller.msg import Person,PersonArray
 from mmp import example
 from experiment_loading import experiment_load2,experiment_load_sevilla
 
+CURRENT = os.path.dirname(os.path.abspath(__file__))
+PARENT = os.path.split(CURRENT)[0]
+
+
 class Evaluator(object):
     def __init__(self):
-        self.exp_name = rospy.get_param("~experiment_name", "posq_test_exp2")
-        self.session_name = rospy.get_param("~session_name", "posq_learn_small")
+        self.exp_name = rospy.get_param("~experiment_name", "posq_test_exp3")
+        self.session_name = rospy.get_param("~session_name", "posq_learn_small2")
         self.real_data = rospy.get_param("~real_data", True)
         self.no_of_runs = rospy.get_param( "number_of_runs",2)
-        self.filepath = os.path.dirname(os.path.abspath(__file__))
-        self.directory = self.filepath+"/"+self.exp_name
-        # RESULTS IS A DICT OF:
-        # "similarity","cost_diff","weights final","weights initial"
+        self.filepath = PARENT
+        print PARENT,CURRENT
+        self.directory = self.filepath+"/data/"+self.exp_name
         self.results_dir = self.filepath+"/results/"+self.session_name+"/"
         #self.real_data_eval()
         self.experiment_data = experiment_load2(self.directory)

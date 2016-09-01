@@ -1,44 +1,35 @@
 #!/usr/bin/env python
-from geometry_msgs.msg import Point32
-from geometry_msgs.msg import PointStamped
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PoseWithCovariance
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from math import *
-from nav_msgs.srv import GetMap
-from nav_msgs.msg import Path,OccupancyGrid
-from active_perception_controller.srv import ActivePerceptionPlan, ActivePerceptionPlanResponse
 import tf
 import pdb
 import rospy
 import roslib
-from rospy.numpy_msg import numpy_msg
-from sensor_msgs.msg import PointCloud, ChannelFloat32
-from sklearn.neighbors import NearestNeighbors
 import time
 import threading
 import numpy as np
 import scipy as sp
-import scipy.ndimage
-from costlib import Cost_Manager
+import os
+import itertools
+import cProfile, pstats, StringIO
+import rosbag
+import helper_functions as fn
+from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
+from math import *
+from nav_msgs.srv import GetMap
+from nav_msgs.msg import Path,OccupancyGrid
+from sklearn.neighbors import NearestNeighbors
 from StringIO import StringIO
 from geometry_msgs.msg._PoseStamped import PoseStamped
 from visualization_msgs.msg import Marker,MarkerArray
-import itertools
 from helper_functions import pixel_to_point
-import cProfile, pstats, StringIO
-from scipy.ndimage.filters import gaussian_filter
-import Queue as Q
-from copy import deepcopy
-import rosbag
 from active_perception_controller.srv import positionChange,ppl_positionChange
-import os
 from motion_planner_posq import MotionPlanner
-import helper_functions as fn
 from active_perception_controller.msg import Person,PersonArray
 from random import shuffle
 from experiment_loading import example,experiment_load2,experiment_load_sevilla
+
+CURRENT = os.path.dirname(os.path.abspath(__file__))
+PARENT = os.path.split(CURRENT)[0]
 
 
 class Learner(object):
@@ -48,24 +39,18 @@ class Learner(object):
         self.time_margin_factor = rospy.get_param("~time_margin_factor", 1.0)
         self.cache_size = rospy.get_param("~point_cache_size", 2500)
         self.momentum = 0.2
-        self.exp_name = rospy.get_param("~experiment_name", "posq_test")
-        self.session_name = rospy.get_param("~session_name", "posq_learn_test")
+        self.exp_name = rospy.get_param("~experiment_name", "posq_test_exp3")
+        self.session_name = rospy.get_param("~session_name", "posq_learn_test_fast")
         self.baseline_eval = rospy.get_param("~baseline", True)
-        self.path = os.path.dirname(os.path.abspath(__file__))
-        self.directory = self.path+"/"+self.exp_name
+        self.path = PARENT
+        self.directory = self.path+"/data/"+self.exp_name
         self.results_dir = self.path+"/results/"+self.session_name+"/"
         fn.make_dir(self.results_dir)
         self.experiment_data = experiment_load2(self.directory)
         self.planner = MotionPlanner()
         self.validation_proportion = rospy.get_param("~validation_proportion", 0.5)
-        #self.experiment_data = self.experiment_data[:10]
-        # shuffle the experimental data: REMEMBER SHUFFLING IS IN PLACE.
-        #shuffle(self.experiment_data)
         self.costlib = self.planner.cost_manager
         self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
-        
-        #self.gt_weights = np.array([ 2. ,  0.5,  0. ,  0.3 ,  2. ,  0.5,  0.4 ])
-        #fn.pickle_saver({"featureset":"icra2","weights":self.gt_weights},self.directory+"/weights.pkl")
         if self.baseline_eval==True:
             try:
                 loaded = fn.pickle_loader(self.directory+"/weights.pkl")
@@ -99,13 +84,11 @@ class Learner(object):
     def single_run(self,name):
         self.planner.planning_time = 300;self.planner.max_planning_time = 320
         self.cache_size = 2500
-        #results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
-        results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
-        results = {"rlt":results_cached_rrt}
+        results_rrtstar = self.learning_loop(self.planner,planner_type="rrtstar")
+        #results_cached_rrt = self.learning_loop(self.planner,planner_type="cached_rrt")
+        results = {"rlt-nc":results_rrtstar}
         fn.pickle_saver(results,self.results_dir+"results_"+name+".pkl")
     def variance_run(self,name):
-
-
         self.planner.planning_time = 10;self.planner.max_planning_time = 15
         nc_300 = self.learning_loop(self.planner,planner_type="rrtstar")
 
@@ -145,6 +128,7 @@ class Learner(object):
         initial_paths = []
         final_paths = []
         all_feature_sums = []
+        gradient_store = []
         for n,i in enumerate(self.experiment_data):
             self.ppl_pub.publish(i.people)
             rospy.sleep(1.)
@@ -166,7 +150,7 @@ class Learner(object):
             iter_similarity = []
             iter_cost_diff = []
             iter_time = []
-            gradient_store = []
+
             iter_grad = np.zeros(self.learner_weights.shape[0])
             self.costlib.weights = self.learner_weights
             self.initial_weights = np.copy(self.learner_weights)
@@ -180,10 +164,7 @@ class Learner(object):
                     validating = False
                 print "CHANGING POSITION"
                 self.planner.publish_empty_path()
-                #validating = True
                 
-                config_change(i.path.poses[0],i.people)
-                rospy.sleep(1.)
                 config_change(i.path.poses[0],i.people)
                 rospy.sleep(1.)
                 self.planner._goal = i.goal

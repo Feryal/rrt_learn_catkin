@@ -92,12 +92,12 @@ class MotionPlanner():
         self._freecells = [i for i in xrange(0,len(self._navmap.data)) 
                            if self._navmap.data[i] == 0]
         
-        self._rrt_eta = rospy.get_param("~rrt_eta", 1.5) # Notation from Karaman & Frazolli, 2011
+        self._rrt_eta = rospy.get_param("~rrt_eta", 1.1) # Notation from Karaman & Frazolli, 2011
         self.planner = rospy.get_param("~planner", "rrtstar")
         robot_radius = rospy.get_param("~robot_radius", 0.4)
         self.goal_tolerance = rospy.get_param("~goal_tolerance", 0.8)
-        self.planning_time = rospy.get_param("~planning_time", 60.)
-        self.max_planning_time = rospy.get_param("~max_planning_time", 70.)
+        self.planning_time = rospy.get_param("~planning_time", 100.)
+        self.max_planning_time = rospy.get_param("~max_planning_time", 120.)
         self._robot_radius_px = robot_radius / self._navmap.info.resolution
         sigma_person = rospy.get_param("sigma_person", 0.05)
         self.astar_res = rospy.get_param("~astar_res", 0.5)
@@ -114,7 +114,7 @@ class MotionPlanner():
         self.cost_manager = Cost_Manager(dt,mp,features = self.planning_featureset)
         pkgpath = roslib.packages.get_pkg_dir('active_perception_controller')
         self._plan_srv = rospy.Service('plan', ActivePerceptionPlan, self._plan_srv_cb)
-        self.initialise_costmap(5)
+        self.cost_manager.initialise_costmap()
         self._lock.release()
 
     def write_planner_params(self,directory):
@@ -129,35 +129,6 @@ class MotionPlanner():
         f.write("Featureset:"+self.planning_featureset+"\n")
         f.close()
 
-    def initialise_costmap(self,resolution):
-        if resolution<1:
-            resolution=3
-        self.costmap =PointCloud()
-        self.costmap.header.frame_id="map"
-        self.costmap.header.stamp = rospy.get_rostime()
-        iterator = range(1,len(self._freecells),resolution)
-        for i in iterator :
-            point = pixel_to_point(self._freecells[i],self._navmap)
-            p = Point32()
-            p.x = point[0]
-            p.y = point[1]
-            p.z = 0.7 
-            self.costmap.points.append(p)
-        vals = ChannelFloat32()
-        vals.name="cost"
-        vals.values = [0]*len(self.costmap.points)
-        self.costmap.channels.append(vals)
-
-    def update_costmap(self):
-        goal_xy = [self._goal.pose.position.x,self._goal.pose.position.y]
-        vals = ChannelFloat32()
-        vals.name = "cost"
-        for n,i in enumerate(self.costmap.points):
-            tic = time.time()
-            self.costmap.channels[0].values[n] = self.cost_manager.get_cost(np.array([i.x,i.y]),np.array(goal_xy))
-            toc =time.time()
-            #self.costmap.chasnnels[0].values[n] = self.cost_manager.obstacle_cost(np.array([i[0],i[1]]))
-        self._costmap_pub.publish(self.costmap)
     def goal_recieved(self,msg):
         self._goal = msg
         print "GOAL RECIEVED"
@@ -190,23 +161,24 @@ class MotionPlanner():
             pass
 
     def plan(self):
-        self.update_costmap()
+        self.cost_manager._goal = self._goal
+        self.cost_manager.update_costmap()
         self._lock.acquire()
         weights = Float32MultiArray()
         weights.data = self.cost_manager.weights
         self.weights_pub.publish(weights)
         if self.planner == "rrtstar":
-            #cached_points = self.make_cached_rrt(self.sample_goal_bias,points_to_cache = 1500 )
+            cached_points = self.make_cached_rrt(self.sample_goal_bias,points_to_cache = 2900 )
             #pr = cProfile.Profile()
             #pr.enable()
-            #pose_path,array_path = self.plan_cached_rrt(cached_points)
+            pose_path,array_path = self.plan_cached_rrt(cached_points)
             #pr.disable()
             #s = StringIO.StringIO()
             #sortby = 'cumulative'
             #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
             #ps.print_stats()
             #print s.getvalue()
-            pose_path,array_path = self.posq_rrtstar(self.sample_goal_bias)
+            #pose_path,array_path = self.posq_rrtstar(self.sample_goal_bias)
         else:
             print "NO PLANNER FOUND"
             return None

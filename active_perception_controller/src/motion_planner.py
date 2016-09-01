@@ -27,7 +27,7 @@ from StringIO import StringIO
 from geometry_msgs.msg._PoseStamped import PoseStamped
 from visualization_msgs.msg import Marker,MarkerArray
 import itertools
-from helper_functions import pixel_to_point
+from helper_functions import pixel_to_point,pixel_to_point_p,points_to_index
 import cProfile, pstats, StringIO
 from scipy.ndimage.filters import gaussian_filter
 import Queue as Q
@@ -66,9 +66,6 @@ class MotionPlanner():
                                          PointCloud,
                                          queue_size=1,
                                          latch = True)
-
-        self._costmap_pub = rospy.Publisher("rrt_cost",PointCloud,queue_size=1)
-
         self.samp_point_pub = rospy.Publisher("sampled_point",MarkerArray,queue_size=1)
         self.weights_pub = rospy.Publisher("weights",Float32MultiArray,queue_size=1)
  
@@ -118,7 +115,7 @@ class MotionPlanner():
         self.cost_manager = Cost_Manager(dt,mp,features = self.planning_featureset)
         pkgpath = roslib.packages.get_pkg_dir('active_perception_controller')
         self._plan_srv = rospy.Service('plan', ActivePerceptionPlan, self._plan_srv_cb)
-        self.initialise_costmap(5)
+        self.cost_manager.initialise_costmap()
         self._lock.release()
 
     def write_planner_params(self,directory):
@@ -133,35 +130,7 @@ class MotionPlanner():
         f.write("Featureset:"+self.planning_featureset+"\n")
         f.close()
 
-    def initialise_costmap(self,resolution):
-        if resolution<1:
-            resolution=3
-        self.costmap =PointCloud()
-        self.costmap.header.frame_id="map"
-        self.costmap.header.stamp = rospy.get_rostime()
-        iterator = range(1,len(self._freecells),resolution)
-        for i in iterator :
-            point = pixel_to_point(self._freecells[i],self._navmap)
-            p = Point32()
-            p.x = point[0]
-            p.y = point[1]
-            p.z = 0.7 
-            self.costmap.points.append(p)
-        vals = ChannelFloat32()
-        vals.name="cost"
-        vals.values = [0]*len(self.costmap.points)
-        self.costmap.channels.append(vals)
 
-    def update_costmap(self):
-        goal_xy = [self._goal.pose.position.x,self._goal.pose.position.y]
-        vals = ChannelFloat32()
-        vals.name = "cost"
-        for n,i in enumerate(self.costmap.points):
-            tic = time.time()
-            self.costmap.channels[0].values[n] = self.cost_manager.get_cost(np.array([i.x,i.y]),np.array(goal_xy))
-            toc =time.time()
-            #self.costmap.chasnnels[0].values[n] = self.cost_manager.obstacle_cost(np.array([i[0],i[1]]))
-        self._costmap_pub.publish(self.costmap)
     def goal_recieved(self,msg):
         self._goal = msg
         print "GOAL RECIEVED"
@@ -194,7 +163,7 @@ class MotionPlanner():
             pass
 
     def plan(self):
-        self.update_costmap()
+        self.cost_manager.update_costmap()
         self._lock.acquire()
         print "PLANNING"
         print self.planner
@@ -316,6 +285,7 @@ class MotionPlanner():
         # C stores the cost at vertex idx which is hte sum of the edges going to it.
         goal_xy = np.array([self._goal.pose.position.x,self._goal.pose.position.y])
         c_init = self.cost_manager.get_cost(probot,goal_xy)
+        #c_init = self.cost_manager.query_costmap(probot)
         C = [c_init]
         edge_C = {}
         planning_time=self.planning_time
@@ -344,9 +314,6 @@ class MotionPlanner():
             else:
                 prand = self.sample_informed(importance_points,variance=6) 
             (dist, idx) = nbrs.kneighbors(prand.reshape(1, -1))
-            #print dist,idx
-            #idx,dist = flann.nn_index(np.array(prand),checks = 5)
-            #idx = idx[0];dist = dist[0]
             pnearest_idx = idx.flatten(1)[0]
             pnearest = V[pnearest_idx]
             #mrk = self.make_sample_marker(prand)
@@ -372,8 +339,9 @@ class MotionPlanner():
                 Pnear_idx = Pnear_idx[0]
                 pmin_idx = pnearest_idx
                 c_nearest = self.cost_manager.get_cost(V[pnearest_idx],goal_xy)
-
+                #c_nearest = self.cost_manager.query_costmap(V[pnearest_idx])[0]
                 c_new =self.cost_manager.get_cost(pnew,goal_xy)
+                #c_new =self.cost_manager.query_costmap(pnew)[0]
                 cum_c = self.integrate_costs(edge_C,parents,pnearest_idx)
                 min_edge_c =self.cost_manager.edge_cost(c_nearest,c_new,pnearest,pnew)
                 cmin = cum_c +min_edge_c

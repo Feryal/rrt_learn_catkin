@@ -1,44 +1,35 @@
 #!/usr/bin/env python
-from geometry_msgs.msg import Point32
-from geometry_msgs.msg import PointStamped
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PoseWithCovariance
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from math import *
-from nav_msgs.srv import GetMap
-from nav_msgs.msg import Path,OccupancyGrid
-from active_perception_controller.srv import ActivePerceptionPlan, ActivePerceptionPlanResponse
 import tf
 import pdb
 import rospy
 import roslib
-from rospy.numpy_msg import numpy_msg
-from sensor_msgs.msg import PointCloud, ChannelFloat32
-from sklearn.neighbors import NearestNeighbors
 import time
 import threading
 import numpy as np
 import scipy as sp
-import scipy.ndimage
-from costlib import Cost_Manager
+import os
+import itertools
+import cProfile, pstats, StringIO
+import rosbag
+import helper_functions as fn
+from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
+from math import *
+from nav_msgs.srv import GetMap
+from nav_msgs.msg import Path,OccupancyGrid
+from sklearn.neighbors import NearestNeighbors
 from StringIO import StringIO
 from geometry_msgs.msg._PoseStamped import PoseStamped
 from visualization_msgs.msg import Marker,MarkerArray
-import itertools
 from helper_functions import pixel_to_point
-import cProfile, pstats, StringIO
-from scipy.ndimage.filters import gaussian_filter
-import Queue as Q
-from copy import deepcopy
-import rosbag
 from active_perception_controller.srv import positionChange,ppl_positionChange
-import os
 from motion_planner import MotionPlanner
-import helper_functions as fn
 from active_perception_controller.msg import Person,PersonArray
 from random import shuffle
 from experiment_loading import example,experiment_load2,experiment_load_sevilla
+
+CURRENT = os.path.dirname(os.path.abspath(__file__))
+PARENT = os.path.split(CURRENT)[0]
 
 
 class Learner(object):
@@ -51,21 +42,15 @@ class Learner(object):
         self.exp_name = rospy.get_param("~experiment_name", "sevilla_test")
         self.session_name = rospy.get_param("~session_name", "sevilla_learn1")
         self.baseline_eval = rospy.get_param("~baseline", False)
-        self.path = os.path.dirname(os.path.abspath(__file__))
-        self.directory = self.path+"/"+self.exp_name
+        self.path = PARENT
+        self.directory = self.path+"/data/"+self.exp_name
         self.results_dir = self.path+"/results/"+self.session_name+"/"
         fn.make_dir(self.results_dir)
         self.experiment_data = experiment_load_sevilla(self.directory)
         self.planner = MotionPlanner()
         self.validation_proportion = rospy.get_param("~validation_proportion", 0.8)
-        #self.experiment_data = self.experiment_data[:10]
-        # shuffle the experimental data: REMEMBER SHUFFLING IS IN PLACE.
-        #shuffle(self.experiment_data)
         self.costlib = self.planner.cost_manager
         self.ppl_pub =  rospy.Publisher("person_poses",PersonArray,queue_size = 10)
-        
-        #self.gt_weights = np.array([ 2. ,  0.5,  0. ,  0.3 ,  2. ,  0.5,  0.4 ])
-        #fn.pickle_saver({"featureset":"icra2","weights":self.gt_weights},self.directory+"/weights.pkl")
         if self.baseline_eval==True:
             try:
                 loaded = fn.pickle_loader(self.directory+"/weights.pkl")
@@ -241,6 +226,7 @@ class Learner(object):
         initial_paths = []
         final_paths = []
         all_feature_sums = []
+        gradient_store = []
         for n,i in enumerate(self.experiment_data):
             self.ppl_pub.publish(i.people)
             rospy.sleep(0.5)
@@ -263,6 +249,7 @@ class Learner(object):
             iter_similarity = []
             iter_cost_diff = []
             iter_time = []
+
             iter_grad = np.zeros(self.learner_weights.shape[0])
             self.costlib.weights = self.learner_weights
             self.initial_weights = np.copy(self.learner_weights)
@@ -330,6 +317,7 @@ class Learner(object):
                           
                 print "PATH FEATURE SUM",path_feature_sum
                 iter_similarity.append(self.get_similarity(i.path_array,array_path))
+            gradient_store.append(iter_grad/(len(self.experiment_data)*(1-self.validation_proportion)))
             grad = (1-self.momentum)*iter_grad/(len(self.experiment_data)*(1-self.validation_proportion)) + self.momentum*prev_grad
             self.learner_weights = self.learner_weights - self.learning_rate*grad
             prev_grad = grad
@@ -343,7 +331,7 @@ class Learner(object):
 
         print cost_diff
         results = {"similarity":similarity,"cost_diff":cost_diff,
-                "weights_final":self.learner_weights,"weights_initial":self.initial_weights,
+                "weights_final":self.learner_weights,"weights_initial":self.initial_weights,"gradients":gradient_store,
                  "initial_paths":initial_paths,"final_paths":final_paths,"validation_proportion":self.validation_proportion,"time_to_cache":time_to_cache,"time_per_iter":time_taken}
 
         return results
