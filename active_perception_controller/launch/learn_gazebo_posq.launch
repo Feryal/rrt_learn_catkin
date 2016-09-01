@@ -1,6 +1,6 @@
 <launch> 
 					<!-- Gazebo-->
-    <include file="$(find rrt_learn_gazebo)/launch/teresa_gazebo.launch"/>
+    <include file="$(find rrt_learn_gazebo)/launch/teresa_gazebo_posq.launch"/>
   <node pkg="tf" type="static_transform_publisher" name="odom_to_rgbd_cam" args="0.0 -2 0.677 0 0 0 odom camera_link 100"/>
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_left_wheel" args="0.0 -0.252 0.0725 0 0 0 base_link left_wheel_link 100"/>
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_right_wheel" args="0.0 0.252 0.0725 0 0 0 base_link right_wheel_link 100"/>
@@ -17,7 +17,7 @@
     <include file="$(find rrt_learn_gazebo)/launch/amcl.launch" />
 
 					<!-- RVIZ-->
-<!--node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/-->
+<node pkg="rviz" name="rviz" type="rviz" args="-d $(find rrt_learn_gazebo)/cfg/simulation.rviz"/>
 
 					<!-- MOVE BASE-->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
