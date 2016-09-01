@@ -41,20 +41,20 @@
     </node>  
 
     					     <!-- RRT -->
-    <!--node pkg="active_perception_controller" type="posq_mmp.py" name="mmp_learner" output="screen">	
+    <node pkg="active_perception_controller" type="posq_mmp.py" name="mmp_learner" output="screen">	
 	    <param name="rrt_eta" type="double" value="0.8" />
 	    <param name="planning_time" type="double" value="10"/>
 	    <param name="max_planning_time" type="double" value="20"/>
 	    <param name="iterations" type="int" value="20"/>
 	    <param name="validation_proportion" type="double" value="0.2"/>	
-	    <param name="learning_rate" type="double" value="0.2"/>
+	    <param name="learning_rate" type="double" value="0.1"/>
 	    <param name="experiment_name" type="string" value="sevilla_test"/>
 	    <param name="session_name" type="string" value="sevilla_test_poses"/>
 	    <param name="astar_res" type="double" value="0.2"/>
 	    <param name="planner" type="string" value="astar"/>
 	    <param name="baseline" type="boolean" value="False"/>
 	    <param name="cost_featureset" type="string" value="icra3"/>
-    </node-->  		
+    </node>  		
 
 					<!--People to costmap -->
     <node pkg="active_perception_controller" type="people_to_costmap.py" name="people_costmap" output="screen">

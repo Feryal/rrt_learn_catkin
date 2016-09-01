@@ -168,17 +168,17 @@ class MotionPlanner():
         weights.data = self.cost_manager.weights
         self.weights_pub.publish(weights)
         if self.planner == "rrtstar":
-            cached_points = self.make_cached_rrt(self.sample_goal_bias,points_to_cache = 2900 )
+            #cached_points = self.make_cached_rrt(self.sample_goal_bias,points_to_cache = 2900 )
             #pr = cProfile.Profile()
             #pr.enable()
-            pose_path,array_path = self.plan_cached_rrt(cached_points)
+            #pose_path,array_path = self.plan_cached_rrt(cached_points)
             #pr.disable()
             #s = StringIO.StringIO()
             #sortby = 'cumulative'
             #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
             #ps.print_stats()
             #print s.getvalue()
-            #pose_path,array_path = self.posq_rrtstar(self.sample_goal_bias)
+            pose_path,array_path = self.posq_rrtstar(self.sample_goal_bias)
         else:
             print "NO PLANNER FOUND"
             return None
